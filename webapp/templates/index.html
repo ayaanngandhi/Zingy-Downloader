@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Downloader</title>
+    <style>
+        :root {
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --bg-tertiary: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --accent: #6200ee;
+            --accent-hover: #7c4dff;
+            --success: #00c853;
+            --error: #cf6679;
+            --border: #404040;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #e0e0e0;
+            --text-primary: #212121;
+            --text-secondary: #666666;
+            --accent: #6200ee;
+            --accent-hover: #7c4dff;
+            --success: #00c853;
+            --error: #b00020;
+            --border: #cccccc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--accent);
+            font-size: 24px;
+        }
+
+        .theme-toggle {
+            display: flex;
+            gap: 8px;
+        }
+
+        .theme-btn {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .theme-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .theme-btn:hover:not(.active) {
+            background: var(--bg-tertiary);
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .card h2 {
+            font-size: 16px;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent);
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background: var(--accent);
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            background: var(--accent-hover);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--border);
+        }
+
+        select {
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+            width: 100%;
+            margin-bottom: 16px;
+        }
+
+        .video-info {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+
+        .video-info img {
+            width: 120px;
+            height: 68px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .video-info .title {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 16px;
+        }
+
+        .progress-container.active {
+            display: block;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .status.success {
+            display: block;
+            background: rgba(0, 200, 83, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .status.error {
+            display: block;
+            background: rgba(207, 102, 121, 0.1);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+
+        .files-list {
+            list-style: none;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .file-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .file-name {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .file-actions button {
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .btn-danger {
+            background: var(--error);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .platform-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+
+        .platform-youtube { background: #ff0000; color: white; }
+        .platform-instagram { background: #e1306c; color: white; }
+        .platform-tiktok { background: #000000; color: white; }
+        .platform-twitter { background: #1da1f2; color: white; }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body data-theme="dark">
+    <div class="container">
+        <header>
+            <h1>Video Downloader</h1>
+            <div class="theme-toggle">
+                <button class="theme-btn" data-theme="light">Light</button>
+                <button class="theme-btn active" data-theme="dark">Dark</button>
+                <button class="theme-btn" data-theme="auto">Auto</button>
+            </div>
+        </header>
+
+        <div class="card">
+            <h2>Download Video</h2>
+            <div class="input-group">
+                <input type="text" id="url-input" placeholder="Paste video URL (YouTube, Instagram, TikTok, Twitter)">
+                <button id="fetch-btn" onclick="fetchFormats()">Fetch</button>
+            </div>
+
+            <div id="video-info" class="hidden">
+                <div class="video-info">
+                    <img id="video-thumbnail" src="" alt="Thumbnail">
+                    <div class="title" id="video-title"></div>
+                    <span id="platform-badge" class="platform-badge"></span>
+                </div>
+
+                <select id="format-select">
+                    <option value="best">Best Quality (Auto)</option>
+                </select>
+
+                <button id="download-btn" onclick="startDownload()">Download</button>
+            </div>
+
+            <div id="progress-container" class="progress-container">
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="progress-percent">0%</span>
+                    <span id="progress-speed"></span>
+                </div>
+            </div>
+
+            <div id="status" class="status"></div>
+        </div>
+
+        <div class="card">
+            <h2>Downloaded Files</h2>
+            <ul id="files-list" class="files-list">
+                <li class="empty-state">No downloaded files yet</li>
+            </ul>
+            <button class="btn-secondary" onclick="loadFiles()" style="margin-top: 12px;">Refresh</button>
+        </div>
+    </div>
+
+    <script>
+        // Theme handling
+        const themeButtons = document.querySelectorAll('.theme-btn');
+        let currentTheme = localStorage.getItem('theme') || 'dark';
+
+        function applyTheme(theme) {
+            currentTheme = theme;
+            localStorage.setItem('theme', theme);
+
+            let effectiveTheme = theme;
+            if (theme === 'auto') {
+                effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+
+            document.body.setAttribute('data-theme', effectiveTheme);
+
+            themeButtons.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.theme === theme);
+            });
+        }
+
+        themeButtons.forEach(btn => {
+            btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
+        });
+
+        // Apply saved theme on load
+        applyTheme(currentTheme);
+
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (currentTheme === 'auto') applyTheme('auto');
+        });
+
+        // Video fetching
+        let currentDownloadId = null;
+        let pollInterval = null;
+
+        async function fetchFormats() {
+            const url = document.getElementById('url-input').value.trim();
+            if (!url) {
+                showStatus('Please enter a URL', 'error');
+                return;
+            }
+
+            const fetchBtn = document.getElementById('fetch-btn');
+            fetchBtn.disabled = true;
+            fetchBtn.innerHTML = '<span class="loading"></span>Fetching...';
+
+            try {
+                const response = await fetch('/api/formats', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('video-info').classList.remove('hidden');
+
+                    // Set thumbnail
+                    const thumbnail = document.getElementById('video-thumbnail');
+                    if (data.thumbnail) {
+                        thumbnail.src = data.thumbnail;
+                        thumbnail.classList.remove('hidden');
+                    } else {
+                        thumbnail.classList.add('hidden');
+                    }
+
+                    // Set title
+                    document.getElementById('video-title').textContent = data.title;
+
+                    // Set platform badge
+                    const badge = document.getElementById('platform-badge');
+                    badge.textContent = data.platform;
+                    badge.className = `platform-badge platform-${data.platform}`;
+
+                    // Populate formats
+                    const select = document.getElementById('format-select');
+                    select.innerHTML = '';
+
+                    data.formats.forEach(format => {
+                        const option = document.createElement('option');
+                        option.value = format.id;
+                        option.textContent = format.label;
+                        select.appendChild(option);
+                    });
+
+                    hideStatus();
+                } else {
+                    showStatus(data.error || 'Failed to fetch video info', 'error');
+                }
+            } catch (error) {
+                showStatus('Network error: ' + error.message, 'error');
+            } finally {
+                fetchBtn.disabled = false;
+                fetchBtn.textContent = 'Fetch';
+            }
+        }
+
+        async function startDownload() {
+            const url = document.getElementById('url-input').value.trim();
+            const format = document.getElementById('format-select').value;
+
+            const downloadBtn = document.getElementById('download-btn');
+            downloadBtn.disabled = true;
+            downloadBtn.innerHTML = '<span class="loading"></span>Starting...';
+
+            try {
+                const response = await fetch('/api/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, format })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentDownloadId = data.download_id;
+                    document.getElementById('progress-container').classList.add('active');
+                    showStatus('Download started...', 'success');
+
+                    // Start polling for progress
+                    pollProgress();
+                } else {
+                    showStatus(data.error || 'Failed to start download', 'error');
+                    downloadBtn.disabled = false;
+                    downloadBtn.textContent = 'Download';
+                }
+            } catch (error) {
+                showStatus('Network error: ' + error.message, 'error');
+                downloadBtn.disabled = false;
+                downloadBtn.textContent = 'Download';
+            }
+        }
+
+        async function pollProgress() {
+            if (!currentDownloadId) return;
+
+            try {
+                const response = await fetch(`/api/progress/${currentDownloadId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('progress-fill').style.width = data.progress + '%';
+                    document.getElementById('progress-percent').textContent = data.progress + '%';
+                    document.getElementById('progress-speed').textContent = data.speed || '';
+
+                    if (data.status === 'completed') {
+                        showStatus(`Downloaded: ${data.filename || data.title}`, 'success');
+                        resetDownloadUI();
+                        loadFiles();
+                        return;
+                    } else if (data.status === 'error') {
+                        showStatus(data.error || 'Download failed', 'error');
+                        resetDownloadUI();
+                        return;
+                    }
+
+                    // Continue polling
+                    setTimeout(pollProgress, 500);
+                }
+            } catch (error) {
+                console.error('Poll error:', error);
+                setTimeout(pollProgress, 1000);
+            }
+        }
+
+        function resetDownloadUI() {
+            currentDownloadId = null;
+            document.getElementById('download-btn').disabled = false;
+            document.getElementById('download-btn').textContent = 'Download';
+            document.getElementById('progress-container').classList.remove('active');
+            document.getElementById('progress-fill').style.width = '0%';
+        }
+
+        async function loadFiles() {
+            try {
+                const response = await fetch('/api/files');
+                const data = await response.json();
+
+                const list = document.getElementById('files-list');
+
+                if (data.files && data.files.length > 0) {
+                    list.innerHTML = data.files.map(file => `
+                        <li class="file-item">
+                            <div class="file-info">
+                                <div class="file-name">${escapeHtml(file.name)}</div>
+                                <div class="file-meta">${file.size_formatted}</div>
+                            </div>
+                            <div class="file-actions">
+                                <a href="/downloads/${encodeURIComponent(file.name)}" download>
+                                    <button>Download</button>
+                                </a>
+                                <button class="btn-danger" onclick="deleteFile('${escapeHtml(file.name)}')">Delete</button>
+                            </div>
+                        </li>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<li class="empty-state">No downloaded files yet</li>';
+                }
+            } catch (error) {
+                console.error('Failed to load files:', error);
+            }
+        }
+
+        async function deleteFile(filename) {
+            if (!confirm(`Delete ${filename}?`)) return;
+
+            try {
+                const response = await fetch('/api/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    loadFiles();
+                } else {
+                    alert(data.error || 'Failed to delete file');
+                }
+            } catch (error) {
+                alert('Network error: ' + error.message);
+            }
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function hideStatus() {
+            document.getElementById('status').className = 'status';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load files on page load
+        loadFiles();
+
+        // Allow Enter key to fetch
+        document.getElementById('url-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') fetchFormats();
+        });
+    </script>
+</body>
+</html>
