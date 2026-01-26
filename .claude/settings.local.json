@@ -19,7 +19,9 @@
       "Bash(export PATH:*)",
       "Bash(./gradlew assembleDebug:*)",
       "Bash(sudo -S cp:*)",
-      "Bash(sudo -S chown:*)"
+      "Bash(sudo -S chown:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
