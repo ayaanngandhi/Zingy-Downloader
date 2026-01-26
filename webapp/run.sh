@@ -3,10 +3,19 @@
 
 cd "$(dirname "$0")"
 
+# Create venv if it doesn't exist
+if [ ! -d "venv" ]; then
+    echo "Creating virtual environment..."
+    python3 -m venv venv
+fi
+
+# Activate venv
+source venv/bin/activate
+
 # Install requirements if needed
 if ! python3 -c "import flask" 2>/dev/null; then
     echo "Installing dependencies..."
-    pip3 install -r requirements.txt
+    pip install -r requirements.txt
 fi
 
 echo "Starting Video Downloader Web App on http://localhost:4321"
