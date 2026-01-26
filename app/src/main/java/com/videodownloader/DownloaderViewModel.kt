@@ -32,6 +32,7 @@ data class DownloadState(
     val detectedPlatform: String? = null,
     val instagramPath: String = SettingsDataStore.DEFAULT_INSTAGRAM_PATH,
     val youtubePath: String = SettingsDataStore.DEFAULT_YOUTUBE_PATH,
+    val theme: String = SettingsDataStore.THEME_DARK,
     val showSettings: Boolean = false,
     val logs: List<LogEntry> = emptyList(),
     val showLogs: Boolean = true
@@ -51,7 +52,7 @@ class DownloaderViewModel(application: Application) : AndroidViewModel(applicati
             Python.start(AndroidPlatform(application))
         }
 
-        // Load saved paths
+        // Load saved paths and theme
         viewModelScope.launch {
             settingsDataStore.instagramPath.collect { path ->
                 _state.update { it.copy(instagramPath = path) }
@@ -60,6 +61,11 @@ class DownloaderViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             settingsDataStore.youtubePath.collect { path ->
                 _state.update { it.copy(youtubePath = path) }
+            }
+        }
+        viewModelScope.launch {
+            settingsDataStore.theme.collect { theme ->
+                _state.update { it.copy(theme = theme) }
             }
         }
 
@@ -125,6 +131,14 @@ class DownloaderViewModel(application: Application) : AndroidViewModel(applicati
             }
         }
         addLog("Paths reset to defaults", "INFO")
+    }
+
+    fun updateTheme(theme: String) {
+        viewModelScope.launch {
+            settingsDataStore.setTheme(theme)
+            _state.update { it.copy(theme = theme) }
+        }
+        addLog("Theme changed to: $theme", "INFO")
     }
 
     private fun detectPlatform(url: String): String? {

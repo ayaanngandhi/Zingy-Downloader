@@ -18,6 +18,11 @@ class SettingsDataStore(private val context: Context) {
     companion object {
         private val INSTAGRAM_PATH_KEY = stringPreferencesKey("instagram_path")
         private val YOUTUBE_PATH_KEY = stringPreferencesKey("youtube_path")
+        private val THEME_KEY = stringPreferencesKey("theme")
+
+        const val THEME_LIGHT = "light"
+        const val THEME_DARK = "dark"
+        const val THEME_AUTO = "auto"
 
         val DEFAULT_INSTAGRAM_PATH: String = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES),
@@ -36,6 +41,16 @@ class SettingsDataStore(private val context: Context) {
 
     val youtubePath: Flow<String> = context.dataStore.data.map { preferences ->
         preferences[YOUTUBE_PATH_KEY] ?: DEFAULT_YOUTUBE_PATH
+    }
+
+    val theme: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[THEME_KEY] ?: THEME_DARK
+    }
+
+    suspend fun setTheme(theme: String) {
+        context.dataStore.edit { preferences ->
+            preferences[THEME_KEY] = theme
+        }
     }
 
     suspend fun setInstagramPath(path: String) {

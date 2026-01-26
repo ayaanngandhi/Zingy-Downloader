@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.isSystemInDarkTheme
 
 class MainActivity : ComponentActivity() {
 
@@ -58,7 +59,8 @@ class MainActivity : ComponentActivity() {
         handleSharedIntent(intent)
 
         setContent {
-            VideoDownloaderTheme {
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            VideoDownloaderTheme(themeSetting = state.theme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -123,9 +125,19 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun VideoDownloaderTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = darkColorScheme(
+fun VideoDownloaderTheme(
+    themeSetting: String = SettingsDataStore.THEME_DARK,
+    content: @Composable () -> Unit
+) {
+    val isDarkTheme = when (themeSetting) {
+        SettingsDataStore.THEME_LIGHT -> false
+        SettingsDataStore.THEME_DARK -> true
+        SettingsDataStore.THEME_AUTO -> isSystemInDarkTheme()
+        else -> true
+    }
+
+    val colorScheme = if (isDarkTheme) {
+        darkColorScheme(
             primary = Color(0xFF6200EE),
             secondary = Color(0xFF03DAC5),
             background = Color(0xFF121212),
@@ -136,7 +148,24 @@ fun VideoDownloaderTheme(content: @Composable () -> Unit) {
             onBackground = Color.White,
             onSurface = Color.White,
             onError = Color.Black
-        ),
+        )
+    } else {
+        lightColorScheme(
+            primary = Color(0xFF6200EE),
+            secondary = Color(0xFF03DAC5),
+            background = Color(0xFFF5F5F5),
+            surface = Color.White,
+            error = Color(0xFFB00020),
+            onPrimary = Color.White,
+            onSecondary = Color.Black,
+            onBackground = Color.Black,
+            onSurface = Color.Black,
+            onError = Color.White
+        )
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
         content = content
     )
 }
@@ -196,8 +225,10 @@ fun MainScreen(viewModel: DownloaderViewModel) {
             SettingsPanel(
                 instagramPath = state.instagramPath,
                 youtubePath = state.youtubePath,
+                theme = state.theme,
                 onInstagramPathChange = { viewModel.updateInstagramPath(it) },
                 onYouTubePathChange = { viewModel.updateYouTubePath(it) },
+                onThemeChange = { viewModel.updateTheme(it) },
                 onReset = { viewModel.resetPaths() }
             )
         }
@@ -484,8 +515,10 @@ fun MainScreen(viewModel: DownloaderViewModel) {
 fun SettingsPanel(
     instagramPath: String,
     youtubePath: String,
+    theme: String,
     onInstagramPathChange: (String) -> Unit,
     onYouTubePathChange: (String) -> Unit,
+    onThemeChange: (String) -> Unit,
     onReset: () -> Unit
 ) {
     // Use local state to avoid cursor jumping
@@ -514,6 +547,45 @@ fun SettingsPanel(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
+            // Theme Selection
+            Text(
+                text = "Theme",
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ThemeButton(
+                    label = "Light",
+                    icon = Icons.Filled.LightMode,
+                    isSelected = theme == SettingsDataStore.THEME_LIGHT,
+                    onClick = { onThemeChange(SettingsDataStore.THEME_LIGHT) },
+                    modifier = Modifier.weight(1f)
+                )
+                ThemeButton(
+                    label = "Dark",
+                    icon = Icons.Filled.DarkMode,
+                    isSelected = theme == SettingsDataStore.THEME_DARK,
+                    onClick = { onThemeChange(SettingsDataStore.THEME_DARK) },
+                    modifier = Modifier.weight(1f)
+                )
+                ThemeButton(
+                    label = "Auto",
+                    icon = Icons.Filled.BrightnessAuto,
+                    isSelected = theme == SettingsDataStore.THEME_AUTO,
+                    onClick = { onThemeChange(SettingsDataStore.THEME_AUTO) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             Text(
                 text = "Download Paths",
                 fontWeight = FontWeight.Bold,
@@ -521,7 +593,7 @@ fun SettingsPanel(
                 color = MaterialTheme.colorScheme.primary
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = localInstagramPath,
@@ -577,6 +649,50 @@ fun SettingsPanel(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Reset to Defaults")
             }
+        }
+    }
+}
+
+@Composable
+fun ThemeButton(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val backgroundColor = if (isSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+    val contentColor = if (isSelected) {
+        MaterialTheme.colorScheme.onPrimary
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier,
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = backgroundColor,
+            contentColor = contentColor
+        )
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = label,
+                fontSize = 12.sp
+            )
         }
     }
 }
