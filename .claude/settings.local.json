@@ -28,7 +28,9 @@
       "Bash(pip3 install:*)",
       "Bash(python3:*)",
       "Bash(source:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(clawdbot gateway wake:*)",
+      "Bash(clawdbot:*)"
     ]
   }
 }
