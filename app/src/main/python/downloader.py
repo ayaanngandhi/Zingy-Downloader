@@ -195,152 +195,192 @@ def download_video(url, output_dir, progress_callback=None):
             logger.log("Using Instagram config")
             ydl_opts['extractor_args'] = {'instagram': {'skip': ['dash']}}
         elif platform == 'youtube':
-            logger.log("Using YouTube config (no ffmpeg)")
-            # Use pre-merged formats only (no ffmpeg needed)
-            # 18 = 360p mp4, 22 = 720p mp4, 37 = 1080p mp4 (pre-merged with audio)
-            ydl_opts['format'] = 'best[ext=mp4][acodec!=none][vcodec!=none]/18/22/best[ext=mp4]/best'
-            # Don't try to merge formats
-            ydl_opts['merge_output_format'] = None
+            logger.log("Using YouTube config (robust format selection)")
+            # Robust format selection with many fallbacks for YouTube
+            # Priority: pre-merged mp4 with audio+video > specific format IDs > any working format
+            format_options = [
+                'best[ext=mp4][acodec!=none][vcodec!=none]',  # Best pre-merged mp4
+                'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]',  # Merge if needed
+                '22',  # 720p mp4 (pre-merged)
+                '18',  # 360p mp4 (pre-merged)
+                '37',  # 1080p mp4 (if available)
+                'best[vcodec!=none][acodec!=none]',  # Any format with both streams
+                'best[ext=mp4]',  # Any mp4
+                'bestvideo+bestaudio/best',  # Merge best available
+                'best',  # Absolute fallback
+            ]
+            ydl_opts['format'] = '/'.join(format_options)
+            logger.log(f"Format string: {ydl_opts['format']}")
+            # Allow merging as fallback (in case ffmpeg is available)
+            ydl_opts['merge_output_format'] = 'mp4'
             # Prefer formats that have both video and audio
             ydl_opts['prefer_free_formats'] = False
+            # Additional YouTube-specific options for reliability
+            ydl_opts['extractor_args'] = {'youtube': {'player_client': ['android', 'web']}}
 
         logger.log("Creating YoutubeDL instance...")
         logger.log(f"yt-dlp version: {yt_dlp.version.__version__}")
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            logger.log("Calling extract_info with download=True...")
+        # Try download with fallback format attempts
+        info = None
+        last_error = None
 
+        # Fallback formats to try if primary fails
+        fallback_formats = [
+            ydl_opts.get('format'),  # Primary format string
+            'best[ext=mp4]',
+            'best[vcodec!=none]',
+            'best',
+        ]
+
+        for fmt_idx, fmt in enumerate(fallback_formats):
+            if fmt is None:
+                continue
             try:
-                info = ydl.extract_info(url, download=True)
-            except Exception as extract_err:
-                logger.error(f"extract_info failed: {extract_err}")
-                logger.error(f"Traceback: {traceback.format_exc()}")
-                return json.dumps({
-                    'success': False,
-                    'error': f"Extract failed: {extract_err}",
-                    'logs': logger.get_logs()
-                })
+                ydl_opts['format'] = fmt
+                logger.log(f"Attempt {fmt_idx + 1}: Trying format '{fmt}'")
 
-            if info is None:
-                logger.error("info is None!")
-                return json.dumps({
-                    'success': False,
-                    'error': "No video info returned",
-                    'logs': logger.get_logs()
-                })
-
-            # Log all info keys
-            logger.log(f"Info keys: {list(info.keys())[:20]}...")  # First 20 keys
-
-            title = info.get('title', 'Unknown')
-            logger.log(f"Title: {title}")
-
-            # Log important info fields
-            for key in ['id', 'ext', 'format', 'format_id', 'requested_downloads', '_filename', 'filepath']:
-                if key in info:
-                    val = info[key]
-                    if isinstance(val, str) and len(val) > 100:
-                        val = val[:100] + "..."
-                    logger.log(f"info[{key}]: {val}")
-
-            # Check requested_downloads for actual file path
-            if 'requested_downloads' in info:
-                logger.log(f"requested_downloads count: {len(info['requested_downloads'])}")
-                for i, dl in enumerate(info['requested_downloads']):
-                    logger.log(f"Download #{i}: {dl.get('filepath', dl.get('filename', 'N/A'))}")
-                    if 'filepath' in dl:
-                        filepath = dl['filepath']
-                        logger.log(f"  Filepath: {filepath}")
-                        logger.log(f"  Exists: {os.path.exists(filepath)}")
-                        if os.path.exists(filepath):
-                            logger.log(f"  Size: {os.path.getsize(filepath)} bytes")
-
-            prepared_filename = ydl.prepare_filename(info)
-            logger.log(f"Prepared filename: {prepared_filename}")
-            logger.log(f"Prepared exists: {os.path.exists(prepared_filename)}")
-
-            # Also check hook captured filename
-            if progress.actual_filename:
-                logger.log(f"Hook filename: {progress.actual_filename}")
-                logger.log(f"Hook file exists: {os.path.exists(progress.actual_filename)}")
-
-            logger.log(f"Total hook calls: {progress.hook_call_count}")
-
-            # Search for the file
-            actual_file = None
-
-            # Check prepared filename and .mp4 variant
-            candidates = [prepared_filename]
-            base, ext = os.path.splitext(prepared_filename)
-            if ext != '.mp4':
-                candidates.append(base + '.mp4')
-
-            # Add hook filename if different
-            if progress.actual_filename and progress.actual_filename not in candidates:
-                candidates.append(progress.actual_filename)
-
-            for candidate in candidates:
-                logger.log(f"Checking candidate: {candidate}")
-                if os.path.exists(candidate):
-                    actual_file = candidate
-                    logger.log(f"FOUND: {candidate}")
-                    break
-
-            # Search output directory
-            if not actual_file:
-                logger.log(f"Listing {abs_output_dir}:")
-                try:
-                    contents = os.listdir(abs_output_dir)
-                    logger.log(f"Contents ({len(contents)} items): {contents}")
-                    for f in contents:
-                        if f.endswith(('.mp4', '.mkv', '.webm', '.m4a')):
-                            full = os.path.join(abs_output_dir, f)
-                            logger.log(f"Video file found: {full}")
-                            actual_file = full
-                            break
-                except Exception as e:
-                    logger.error(f"List dir error: {e}")
-
-            # Check CWD
-            if not actual_file:
-                cwd = os.getcwd()
-                logger.log(f"Checking CWD: {cwd}")
-                try:
-                    contents = os.listdir(cwd)
-                    videos = [f for f in contents if f.endswith(('.mp4', '.mkv', '.webm'))]
-                    logger.log(f"Videos in CWD: {videos}")
-                    for f in videos:
-                        full = os.path.join(cwd, f)
-                        dest = os.path.join(abs_output_dir, f)
-                        logger.log(f"Moving {full} -> {dest}")
-                        shutil.move(full, dest)
-                        actual_file = dest
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    logger.log("Calling extract_info with download=True...")
+                    info = ydl.extract_info(url, download=True)
+                    if info:
+                        logger.log(f"Success with format: {fmt}")
                         break
-                except Exception as e:
-                    logger.error(f"CWD check error: {e}")
+            except Exception as extract_err:
+                last_error = extract_err
+                error_str = str(extract_err).lower()
+                logger.warning(f"Format '{fmt}' failed: {extract_err}")
 
-            # Final result
-            if actual_file and os.path.exists(actual_file):
-                size = os.path.getsize(actual_file)
-                logger.log(f"========== SUCCESS ==========")
-                logger.log(f"File: {actual_file}")
-                logger.log(f"Size: {size / 1024 / 1024:.2f} MB")
+                # If it's a format availability issue, try next format
+                if 'requested format' in error_str or 'format' in error_str or 'not available' in error_str:
+                    logger.log("Format not available, trying fallback...")
+                    continue
+                # For other errors, also try fallback but log the traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
+                continue
 
-                return json.dumps({
-                    'success': True,
-                    'filename': actual_file,
-                    'title': title,
-                    'platform': platform,
-                    'file_size': size,
-                    'logs': logger.get_logs()
-                })
-            else:
-                logger.error("========== FILE NOT FOUND ==========")
-                return json.dumps({
-                    'success': False,
-                    'error': "Download completed but file not found",
-                    'logs': logger.get_logs()
-                })
+        if info is None:
+            logger.error(f"All format attempts failed. Last error: {last_error}")
+            return json.dumps({
+                'success': False,
+                'error': f"Download failed after trying all formats: {last_error}",
+                'logs': logger.get_logs()
+            })
+
+        # Log all info keys
+        logger.log(f"Info keys: {list(info.keys())[:20]}...")  # First 20 keys
+
+        title = info.get('title', 'Unknown')
+        logger.log(f"Title: {title}")
+
+        # Log important info fields
+        for key in ['id', 'ext', 'format', 'format_id', 'requested_downloads', '_filename', 'filepath']:
+            if key in info:
+                val = info[key]
+                if isinstance(val, str) and len(val) > 100:
+                    val = val[:100] + "..."
+                logger.log(f"info[{key}]: {val}")
+
+        # Check requested_downloads for actual file path
+        if 'requested_downloads' in info:
+            logger.log(f"requested_downloads count: {len(info['requested_downloads'])}")
+            for i, dl in enumerate(info['requested_downloads']):
+                logger.log(f"Download #{i}: {dl.get('filepath', dl.get('filename', 'N/A'))}")
+                if 'filepath' in dl:
+                    filepath = dl['filepath']
+                    logger.log(f"  Filepath: {filepath}")
+                    logger.log(f"  Exists: {os.path.exists(filepath)}")
+                    if os.path.exists(filepath):
+                        logger.log(f"  Size: {os.path.getsize(filepath)} bytes")
+
+        # Prepare filename using a fresh ydl instance
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            prepared_filename = ydl.prepare_filename(info)
+        logger.log(f"Prepared filename: {prepared_filename}")
+        logger.log(f"Prepared exists: {os.path.exists(prepared_filename)}")
+
+        # Also check hook captured filename
+        if progress.actual_filename:
+            logger.log(f"Hook filename: {progress.actual_filename}")
+            logger.log(f"Hook file exists: {os.path.exists(progress.actual_filename)}")
+
+        logger.log(f"Total hook calls: {progress.hook_call_count}")
+
+        # Search for the file
+        actual_file = None
+
+        # Check prepared filename and .mp4 variant
+        candidates = [prepared_filename]
+        base, ext = os.path.splitext(prepared_filename)
+        if ext != '.mp4':
+            candidates.append(base + '.mp4')
+
+        # Add hook filename if different
+        if progress.actual_filename and progress.actual_filename not in candidates:
+            candidates.append(progress.actual_filename)
+
+        for candidate in candidates:
+            logger.log(f"Checking candidate: {candidate}")
+            if os.path.exists(candidate):
+                actual_file = candidate
+                logger.log(f"FOUND: {candidate}")
+                break
+
+        # Search output directory
+        if not actual_file:
+            logger.log(f"Listing {abs_output_dir}:")
+            try:
+                contents = os.listdir(abs_output_dir)
+                logger.log(f"Contents ({len(contents)} items): {contents}")
+                for f in contents:
+                    if f.endswith(('.mp4', '.mkv', '.webm', '.m4a')):
+                        full = os.path.join(abs_output_dir, f)
+                        logger.log(f"Video file found: {full}")
+                        actual_file = full
+                        break
+            except Exception as e:
+                logger.error(f"List dir error: {e}")
+
+        # Check CWD
+        if not actual_file:
+            cwd = os.getcwd()
+            logger.log(f"Checking CWD: {cwd}")
+            try:
+                contents = os.listdir(cwd)
+                videos = [f for f in contents if f.endswith(('.mp4', '.mkv', '.webm'))]
+                logger.log(f"Videos in CWD: {videos}")
+                for f in videos:
+                    full = os.path.join(cwd, f)
+                    dest = os.path.join(abs_output_dir, f)
+                    logger.log(f"Moving {full} -> {dest}")
+                    shutil.move(full, dest)
+                    actual_file = dest
+                    break
+            except Exception as e:
+                logger.error(f"CWD check error: {e}")
+
+        # Final result
+        if actual_file and os.path.exists(actual_file):
+            size = os.path.getsize(actual_file)
+            logger.log(f"========== SUCCESS ==========")
+            logger.log(f"File: {actual_file}")
+            logger.log(f"Size: {size / 1024 / 1024:.2f} MB")
+
+            return json.dumps({
+                'success': True,
+                'filename': actual_file,
+                'title': title,
+                'platform': platform,
+                'file_size': size,
+                'logs': logger.get_logs()
+            })
+        else:
+            logger.error("========== FILE NOT FOUND ==========")
+            return json.dumps({
+                'success': False,
+                'error': "Download completed but file not found",
+                'logs': logger.get_logs()
+            })
 
     except Exception as e:
         logger.error(f"Exception: {e}")
