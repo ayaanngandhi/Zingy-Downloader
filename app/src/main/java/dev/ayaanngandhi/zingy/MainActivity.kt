@@ -1,4 +1,4 @@
-package com.videodownloader
+package dev.ayaanngandhi.zingy
 
 import android.Manifest
 import android.content.Intent
@@ -192,7 +192,7 @@ fun MainScreen(viewModel: DownloaderViewModel) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Video Downloader",
+                text = "Zingy",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary

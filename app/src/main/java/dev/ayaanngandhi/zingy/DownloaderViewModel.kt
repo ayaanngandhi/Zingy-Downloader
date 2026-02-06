@@ -1,4 +1,4 @@
-package com.videodownloader
+package dev.ayaanngandhi.zingy
 
 import android.app.Application
 import android.media.MediaScannerConnection
