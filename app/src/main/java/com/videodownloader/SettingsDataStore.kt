@@ -16,31 +16,21 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 class SettingsDataStore(private val context: Context) {
 
     companion object {
-        private val INSTAGRAM_PATH_KEY = stringPreferencesKey("instagram_path")
-        private val YOUTUBE_PATH_KEY = stringPreferencesKey("youtube_path")
+        private val DOWNLOAD_PATH_KEY = stringPreferencesKey("download_path")
         private val THEME_KEY = stringPreferencesKey("theme")
 
         const val THEME_LIGHT = "light"
         const val THEME_DARK = "dark"
         const val THEME_AUTO = "auto"
 
-        val DEFAULT_INSTAGRAM_PATH: String = File(
+        val DEFAULT_DOWNLOAD_PATH: String = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES),
-            "Instagram"
-        ).absolutePath
-
-        val DEFAULT_YOUTUBE_PATH: String = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES),
-            "YouTube"
+            "VideoDownloader"
         ).absolutePath
     }
 
-    val instagramPath: Flow<String> = context.dataStore.data.map { preferences ->
-        preferences[INSTAGRAM_PATH_KEY] ?: DEFAULT_INSTAGRAM_PATH
-    }
-
-    val youtubePath: Flow<String> = context.dataStore.data.map { preferences ->
-        preferences[YOUTUBE_PATH_KEY] ?: DEFAULT_YOUTUBE_PATH
+    val downloadPath: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[DOWNLOAD_PATH_KEY] ?: DEFAULT_DOWNLOAD_PATH
     }
 
     val theme: Flow<String> = context.dataStore.data.map { preferences ->
@@ -53,22 +43,15 @@ class SettingsDataStore(private val context: Context) {
         }
     }
 
-    suspend fun setInstagramPath(path: String) {
+    suspend fun setDownloadPath(path: String) {
         context.dataStore.edit { preferences ->
-            preferences[INSTAGRAM_PATH_KEY] = path
-        }
-    }
-
-    suspend fun setYouTubePath(path: String) {
-        context.dataStore.edit { preferences ->
-            preferences[YOUTUBE_PATH_KEY] = path
+            preferences[DOWNLOAD_PATH_KEY] = path
         }
     }
 
     suspend fun resetToDefaults() {
         context.dataStore.edit { preferences ->
-            preferences.remove(INSTAGRAM_PATH_KEY)
-            preferences.remove(YOUTUBE_PATH_KEY)
+            preferences.remove(DOWNLOAD_PATH_KEY)
         }
     }
 }

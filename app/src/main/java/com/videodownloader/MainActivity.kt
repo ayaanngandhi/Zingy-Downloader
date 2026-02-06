@@ -209,7 +209,7 @@ fun MainScreen(viewModel: DownloaderViewModel) {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Download videos from Instagram & YouTube",
+            text = "Download videos from any platform",
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         )
@@ -223,13 +223,11 @@ fun MainScreen(viewModel: DownloaderViewModel) {
             exit = shrinkVertically() + fadeOut()
         ) {
             SettingsPanel(
-                instagramPath = state.instagramPath,
-                youtubePath = state.youtubePath,
+                downloadPath = state.downloadPath,
                 theme = state.theme,
-                onInstagramPathChange = { viewModel.updateInstagramPath(it) },
-                onYouTubePathChange = { viewModel.updateYouTubePath(it) },
+                onDownloadPathChange = { viewModel.updateDownloadPath(it) },
                 onThemeChange = { viewModel.updateTheme(it) },
-                onReset = { viewModel.resetPaths() }
+                onReset = { viewModel.resetPath() }
             )
         }
 
@@ -246,7 +244,7 @@ fun MainScreen(viewModel: DownloaderViewModel) {
                     value = state.url,
                     onValueChange = { viewModel.updateUrl(it) },
                     label = { Text("Video URL") },
-                    placeholder = { Text("Paste Instagram or YouTube link") },
+                    placeholder = { Text("Paste any video link") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     enabled = !state.isLoading,
@@ -293,12 +291,22 @@ fun MainScreen(viewModel: DownloaderViewModel) {
                             imageVector = when (platform) {
                                 "instagram" -> Icons.Filled.CameraAlt
                                 "youtube" -> Icons.Filled.PlayCircle
-                                else -> Icons.Filled.Link
+                                "tiktok" -> Icons.Filled.MusicNote
+                                "twitter" -> Icons.Filled.Tag
+                                "facebook" -> Icons.Filled.Facebook
+                                "reddit" -> Icons.Filled.Forum
+                                "twitch" -> Icons.Filled.Videocam
+                                else -> Icons.Filled.VideoLibrary
                             },
                             contentDescription = null,
                             tint = when (platform) {
                                 "instagram" -> Color(0xFFE1306C)
                                 "youtube" -> Color(0xFFFF0000)
+                                "tiktok" -> Color(0xFF00F2EA)
+                                "twitter" -> Color(0xFF1DA1F2)
+                                "facebook" -> Color(0xFF1877F2)
+                                "reddit" -> Color(0xFFFF4500)
+                                "twitch" -> Color(0xFF9146FF)
                                 else -> MaterialTheme.colorScheme.primary
                             },
                             modifier = Modifier.size(20.dp)
@@ -498,10 +506,11 @@ fun MainScreen(viewModel: DownloaderViewModel) {
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "1. Copy a video link from Instagram or YouTube\n" +
+                    text = "1. Copy a video link from any platform\n" +
                             "2. Paste it using the Paste button\n" +
                             "3. Tap Download\n\n" +
-                            "Or share directly from Instagram/YouTube to this app!",
+                            "Supports: YouTube, Instagram, TikTok, Twitter/X,\n" +
+                            "Facebook, Reddit, Twitch, Vimeo, and more!",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     lineHeight = 20.sp
@@ -513,27 +522,19 @@ fun MainScreen(viewModel: DownloaderViewModel) {
 
 @Composable
 fun SettingsPanel(
-    instagramPath: String,
-    youtubePath: String,
+    downloadPath: String,
     theme: String,
-    onInstagramPathChange: (String) -> Unit,
-    onYouTubePathChange: (String) -> Unit,
+    onDownloadPathChange: (String) -> Unit,
     onThemeChange: (String) -> Unit,
     onReset: () -> Unit
 ) {
     // Use local state to avoid cursor jumping
-    var localInstagramPath by remember { mutableStateOf(instagramPath) }
-    var localYoutubePath by remember { mutableStateOf(youtubePath) }
+    var localDownloadPath by remember { mutableStateOf(downloadPath) }
 
     // Sync local state when external state changes (e.g., reset)
-    LaunchedEffect(instagramPath) {
-        if (localInstagramPath != instagramPath) {
-            localInstagramPath = instagramPath
-        }
-    }
-    LaunchedEffect(youtubePath) {
-        if (localYoutubePath != youtubePath) {
-            localYoutubePath = youtubePath
+    LaunchedEffect(downloadPath) {
+        if (localDownloadPath != downloadPath) {
+            localDownloadPath = downloadPath
         }
     }
 
@@ -587,7 +588,7 @@ fun SettingsPanel(
             Spacer(modifier = Modifier.height(20.dp))
 
             Text(
-                text = "Download Paths",
+                text = "Download Path",
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.primary
@@ -596,39 +597,19 @@ fun SettingsPanel(
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
-                value = localInstagramPath,
+                value = localDownloadPath,
                 onValueChange = { newValue ->
-                    localInstagramPath = newValue
-                    onInstagramPathChange(newValue)
+                    localDownloadPath = newValue
+                    onDownloadPathChange(newValue)
                 },
-                label = { Text("Instagram Save Path") },
+                label = { Text("Save Location") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 leadingIcon = {
                     Icon(
-                        imageVector = Icons.Filled.CameraAlt,
+                        imageVector = Icons.Filled.Folder,
                         contentDescription = null,
-                        tint = Color(0xFFE1306C)
-                    )
-                }
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = localYoutubePath,
-                onValueChange = { newValue ->
-                    localYoutubePath = newValue
-                    onYouTubePathChange(newValue)
-                },
-                label = { Text("YouTube Save Path") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Filled.PlayCircle,
-                        contentDescription = null,
-                        tint = Color(0xFFFF0000)
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             )
@@ -647,7 +628,7 @@ fun SettingsPanel(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Reset to Defaults")
+                Text("Reset to Default")
             }
         }
     }
