@@ -1,44 +1,39 @@
-# Video Downloader App
+# Zingy
 
-An Android app that downloads videos from Instagram Reels and YouTube using yt-dlp.
+Download videos from any platform - Android app + Web app
 
 ## Features
-
-- Download Instagram Reels by sharing/pasting link
-- Download YouTube videos by sharing/pasting link
-- Automatic organization:
-  - Instagram videos saved to: `storage/emulated/0/Movies/Instagram/`
-  - YouTube videos saved to: `storage/emulated/0/Movies/YouTube/`
+- Download from 1000+ sites (YouTube, Instagram, TikTok, Twitter, etc.)
 - Simple, clean UI
-- Download progress indicator
+- Customizable download path
+- Works offline (after download)
 
-## Requirements
+## Android App
+Package: `dev.ayaanngandhi.zingy`
+- Download the APK from [Releases](../../releases)
+- Requires Android 8.0+
 
-- Android 7.0 (API 24) or higher
-- Internet connection
-- Storage permission
+## Web App
+A Flask-based web interface for desktop use.
 
-## Tech Stack
+### Setup
+```bash
+cd webapp
+pip install -r requirements.txt
+python app.py
+```
+Then open http://localhost:4321
 
-- Kotlin
-- Jetpack Compose for UI
-- yt-dlp (via chaquopy Python integration)
-- Coroutines for async operations
+## Building from Source
 
-## Usage
+### Android
+```bash
+./gradlew assembleRelease
+```
+APK will be at `app/build/outputs/apk/release/`
 
-1. Copy a video link from Instagram or YouTube
-2. Open the app
-3. Paste the link or use the share menu
-4. Tap Download
-5. Video will be saved to the appropriate Movies subfolder
-
-## Building
-
-1. Open project in Android Studio
-2. Sync Gradle
-3. Build and run on device/emulator
+### Web
+Just run `python webapp/app.py`
 
 ## License
-
-MIT License
+MIT
