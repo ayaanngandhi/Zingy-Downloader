@@ -338,7 +338,7 @@ def serve_download(filename):
 
 
 if __name__ == '__main__':
-    print(f"Zingy Web App - Backend API")
+    print(f"Zingy Web App")
     print(f"Download directory: {DOWNLOAD_DIR}")
-    print(f"Starting API server on http://localhost:4322")
-    app.run(host='0.0.0.0', port=4322, debug=False, threaded=True)
+    print(f"Starting server on http://localhost:4321")
+    app.run(host='0.0.0.0', port=4321, debug=False, threaded=True)
