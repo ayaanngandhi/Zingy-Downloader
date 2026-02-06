@@ -59,7 +59,7 @@ chaquopy {
         buildPython("/usr/bin/python3.12")
         version = "3.8"
         pip {
-            install("yt-dlp")
+            install("yt-dlp>=2024.12.1")
         }
     }
 }
