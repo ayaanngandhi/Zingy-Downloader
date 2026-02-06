@@ -100,3 +100,10 @@ venv/
 # Backup files
 *.bak
 *.backup
+
+# Claude Code
+.claude/
+
+# Dev notes
+PROGRESS.md
+TASKS.md
