@@ -30,8 +30,7 @@ data class DownloadState(
     val error: String? = null,
     val successMessage: String? = null,
     val detectedPlatform: String? = null,
-    val instagramPath: String = SettingsDataStore.DEFAULT_INSTAGRAM_PATH,
-    val youtubePath: String = SettingsDataStore.DEFAULT_YOUTUBE_PATH,
+    val downloadPath: String = SettingsDataStore.DEFAULT_DOWNLOAD_PATH,
     val theme: String = SettingsDataStore.THEME_DARK,
     val showSettings: Boolean = false,
     val logs: List<LogEntry> = emptyList(),
@@ -52,15 +51,10 @@ class DownloaderViewModel(application: Application) : AndroidViewModel(applicati
             Python.start(AndroidPlatform(application))
         }
 
-        // Load saved paths and theme
+        // Load saved path and theme
         viewModelScope.launch {
-            settingsDataStore.instagramPath.collect { path ->
-                _state.update { it.copy(instagramPath = path) }
-            }
-        }
-        viewModelScope.launch {
-            settingsDataStore.youtubePath.collect { path ->
-                _state.update { it.copy(youtubePath = path) }
+            settingsDataStore.downloadPath.collect { path ->
+                _state.update { it.copy(downloadPath = path) }
             }
         }
         viewModelScope.launch {
@@ -106,31 +100,21 @@ class DownloaderViewModel(application: Application) : AndroidViewModel(applicati
         _state.update { it.copy(showSettings = !it.showSettings) }
     }
 
-    fun updateInstagramPath(path: String) {
+    fun updateDownloadPath(path: String) {
         viewModelScope.launch {
-            settingsDataStore.setInstagramPath(path)
-            _state.update { it.copy(instagramPath = path) }
+            settingsDataStore.setDownloadPath(path)
+            _state.update { it.copy(downloadPath = path) }
         }
     }
 
-    fun updateYouTubePath(path: String) {
-        viewModelScope.launch {
-            settingsDataStore.setYouTubePath(path)
-            _state.update { it.copy(youtubePath = path) }
-        }
-    }
-
-    fun resetPaths() {
+    fun resetPath() {
         viewModelScope.launch {
             settingsDataStore.resetToDefaults()
             _state.update {
-                it.copy(
-                    instagramPath = SettingsDataStore.DEFAULT_INSTAGRAM_PATH,
-                    youtubePath = SettingsDataStore.DEFAULT_YOUTUBE_PATH
-                )
+                it.copy(downloadPath = SettingsDataStore.DEFAULT_DOWNLOAD_PATH)
             }
         }
-        addLog("Paths reset to defaults", "INFO")
+        addLog("Path reset to default", "INFO")
     }
 
     fun updateTheme(theme: String) {
@@ -142,10 +126,20 @@ class DownloaderViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     private fun detectPlatform(url: String): String? {
+        if (url.isBlank()) return null
         val urlLower = url.lowercase()
         return when {
             urlLower.contains("instagram.com") || urlLower.contains("instagr.am") -> "instagram"
             urlLower.contains("youtube.com") || urlLower.contains("youtu.be") -> "youtube"
+            urlLower.contains("tiktok.com") -> "tiktok"
+            urlLower.contains("twitter.com") || urlLower.contains("x.com") -> "twitter"
+            urlLower.contains("facebook.com") || urlLower.contains("fb.watch") -> "facebook"
+            urlLower.contains("vimeo.com") -> "vimeo"
+            urlLower.contains("reddit.com") -> "reddit"
+            urlLower.contains("twitch.tv") -> "twitch"
+            urlLower.contains("dailymotion.com") -> "dailymotion"
+            urlLower.contains("soundcloud.com") -> "soundcloud"
+            urlLower.matches(Regex("https?://.*")) -> "video" // Any valid URL
             else -> null
         }
     }
@@ -160,16 +154,12 @@ class DownloaderViewModel(application: Application) : AndroidViewModel(applicati
 
         val platform = detectPlatform(url)
         if (platform == null) {
-            _state.update { it.copy(error = "URL must be from Instagram or YouTube") }
-            addLog("Error: Invalid platform for URL: $url", "ERROR")
+            _state.update { it.copy(error = "Please enter a valid URL") }
+            addLog("Error: Invalid URL: $url", "ERROR")
             return
         }
 
-        val outputDir = when (platform) {
-            "instagram" -> _state.value.instagramPath
-            "youtube" -> _state.value.youtubePath
-            else -> return
-        }
+        val outputDir = _state.value.downloadPath
 
         addLog("Starting download...", "INFO")
         addLog("URL: $url", "INFO")
