@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.videodownloader"
+    namespace = "dev.ayaanngandhi.zingy"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.videodownloader"
+        applicationId = "dev.ayaanngandhi.zingy"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

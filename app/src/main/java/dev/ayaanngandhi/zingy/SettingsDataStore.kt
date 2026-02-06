@@ -1,4 +1,4 @@
-package com.videodownloader
+package dev.ayaanngandhi.zingy
 
 import android.content.Context
 import android.os.Environment
@@ -25,7 +25,7 @@ class SettingsDataStore(private val context: Context) {
 
         val DEFAULT_DOWNLOAD_PATH: String = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES),
-            "VideoDownloader"
+            "Zingy"
         ).absolutePath
     }
 
