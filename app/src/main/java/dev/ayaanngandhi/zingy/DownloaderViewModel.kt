@@ -192,6 +192,9 @@ class DownloaderViewModel(application: Application) : AndroidViewModel(applicati
             )
         }
 
+        // Start foreground service to keep download running in background
+        DownloadService.start(getApplication(), "Downloading...")
+
         viewModelScope.launch {
             try {
                 addLog("Calling Python downloader...", "INFO")
@@ -261,6 +264,8 @@ class DownloaderViewModel(application: Application) : AndroidViewModel(applicati
                             url = ""
                         )
                     }
+                    // Stop foreground service
+                    DownloadService.stop(getApplication())
                 } else {
                     val errorMsg = result.optString("error", "Download failed")
                     addLog("Download failed: $errorMsg", "ERROR")
@@ -277,6 +282,8 @@ class DownloaderViewModel(application: Application) : AndroidViewModel(applicati
                             error = errorMsg
                         )
                     }
+                    // Stop foreground service
+                    DownloadService.stop(getApplication())
                 }
             } catch (e: Exception) {
                 addLog("Exception: ${e.message}", "ERROR")
@@ -290,6 +297,8 @@ class DownloaderViewModel(application: Application) : AndroidViewModel(applicati
                         error = e.message ?: "An error occurred"
                     )
                 }
+                // Stop foreground service
+                DownloadService.stop(getApplication())
             }
         }
     }
