@@ -376,6 +376,9 @@
     </div>
 
     <script>
+        // API Base URL (backend runs on port 4322)
+        const API_BASE = 'http://localhost:4322';
+
         // Theme handling
         const themeButtons = document.querySelectorAll('.theme-btn');
         let currentTheme = localStorage.getItem('theme') || 'dark';
@@ -424,7 +427,7 @@
             fetchBtn.innerHTML = '<span class="loading"></span>Fetching...';
 
             try {
-                const response = await fetch('/api/formats', {
+                const response = await fetch(`${API_BASE}/api/formats`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url })
@@ -484,7 +487,7 @@
             downloadBtn.innerHTML = '<span class="loading"></span>Starting...';
 
             try {
-                const response = await fetch('/api/download', {
+                const response = await fetch(`${API_BASE}/api/download`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url, format })
@@ -515,7 +518,7 @@
             if (!currentDownloadId) return;
 
             try {
-                const response = await fetch(`/api/progress/${currentDownloadId}`);
+                const response = await fetch(`${API_BASE}/api/progress/${currentDownloadId}`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -553,7 +556,7 @@
 
         async function loadFiles() {
             try {
-                const response = await fetch('/api/files');
+                const response = await fetch(`${API_BASE}/api/files`);
                 const data = await response.json();
 
                 const list = document.getElementById('files-list');
@@ -566,7 +569,7 @@
                                 <div class="file-meta">${file.size_formatted}</div>
                             </div>
                             <div class="file-actions">
-                                <a href="/downloads/${encodeURIComponent(file.name)}" download>
+                                <a href="${API_BASE}/downloads/${encodeURIComponent(file.name)}" download>
                                     <button>Download</button>
                                 </a>
                                 <button class="btn-danger" onclick="deleteFile('${escapeHtml(file.name)}')">Delete</button>
@@ -585,7 +588,7 @@
             if (!confirm(`Delete ${filename}?`)) return;
 
             try {
-                const response = await fetch('/api/delete', {
+                const response = await fetch(`${API_BASE}/api/delete`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ filename })
