@@ -9,9 +9,11 @@ import uuid
 import threading
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask_cors import CORS
 import yt_dlp
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for frontend on different port
 
 # Configuration
 DOWNLOAD_DIR = os.path.expanduser("~/Downloads/Zingy")
@@ -336,7 +338,7 @@ def serve_download(filename):
 
 
 if __name__ == '__main__':
-    print(f"Zingy Web App")
+    print(f"Zingy Web App - Backend API")
     print(f"Download directory: {DOWNLOAD_DIR}")
-    print(f"Starting server on http://localhost:4321")
-    app.run(host='0.0.0.0', port=4321, debug=False, threaded=True)
+    print(f"Starting API server on http://localhost:4322")
+    app.run(host='0.0.0.0', port=4322, debug=False, threaded=True)
