@@ -47,98 +47,99 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 750px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 40px 20px;
         }
 
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
         }
 
-        h1 {
-            color: var(--accent);
-            font-size: 24px;
+        .logo {
+            font-size: 48px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 16px;
         }
 
         .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
             display: flex;
-            gap: 8px;
+            gap: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 4px;
         }
 
-        .theme-btn {
-            padding: 8px 12px;
-            border: 1px solid var(--border);
-            background: var(--bg-secondary);
+        .theme-toggle button {
+            background: none;
+            border: none;
             color: var(--text-secondary);
-            border-radius: 8px;
+            padding: 6px 12px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
             transition: all 0.2s;
         }
 
-        .theme-btn.active {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
-
-        .theme-btn:hover:not(.active) {
-            background: var(--bg-tertiary);
-        }
-
-        .card {
+        .theme-toggle button.active {
             background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border);
+            color: var(--text-primary);
         }
 
-        .card h2 {
-            font-size: 16px;
-            color: var(--accent);
-            margin-bottom: 16px;
-        }
-
+        /* URL Input */
         .input-group {
             display: flex;
-            gap: 10px;
-            margin-bottom: 16px;
+            gap: 12px;
+            margin-bottom: 24px;
         }
 
-        input[type="text"] {
+        .input-group input {
             flex: 1;
-            padding: 12px 16px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--bg-tertiary);
+            padding: 14px 18px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: var(--bg-secondary);
             color: var(--text-primary);
-            font-size: 14px;
+            font-size: 16px;
             outline: none;
             transition: border-color 0.2s;
         }
 
-        input[type="text"]:focus {
+        .input-group input:focus {
             border-color: var(--accent);
         }
 
-        button {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            background: var(--accent);
-            color: white;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background 0.2s;
+        .input-group input::placeholder {
+            color: var(--text-secondary);
         }
 
-        button:hover:not(:disabled) {
+        button {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            background: var(--accent);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, opacity 0.2s;
+        }
+
+        button:hover {
             background: var(--accent-hover);
         }
 
@@ -147,54 +148,114 @@
             cursor: not-allowed;
         }
 
-        .btn-secondary {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
+        /* Loading spinner */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
         }
 
-        .btn-secondary:hover:not(:disabled) {
-            background: var(--border);
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        select {
-            padding: 12px 16px;
-            border: 1px solid var(--border);
+        /* Status */
+        .status {
+            text-align: center;
+            padding: 10px;
             border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.error {
+            display: block;
+            background: rgba(207, 102, 121, 0.15);
+            color: var(--error);
+        }
+
+        .status.success {
+            display: block;
+            background: rgba(0, 200, 83, 0.15);
+            color: var(--success);
+        }
+
+        /* Video Info */
+        .video-info {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            border: 1px solid var(--border);
+        }
+
+        .video-info.hidden { display: none; }
+
+        .video-thumbnail {
+            width: 160px;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .video-thumbnail.hidden { display: none; }
+
+        .video-details {
+            flex: 1;
+        }
+
+        .video-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+
+        .platform-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .platform-youtube { background: rgba(255,0,0,0.15); color: #ff4444; }
+        .platform-instagram { background: rgba(225,48,108,0.15); color: #e1306c; }
+        .platform-tiktok { background: rgba(0,0,0,0.3); color: #fff; }
+        .platform-twitter { background: rgba(29,161,242,0.15); color: #1da1f2; }
+
+        /* Format Select */
+        .format-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
             background: var(--bg-tertiary);
             color: var(--text-primary);
             font-size: 14px;
+            margin-bottom: 12px;
             outline: none;
-            width: 100%;
-            margin-bottom: 16px;
         }
 
-        .video-info {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 16px;
-            align-items: center;
+        .format-select:focus {
+            border-color: var(--accent);
         }
 
-        .video-info img {
-            width: 120px;
-            height: 68px;
-            object-fit: cover;
-            border-radius: 8px;
-        }
-
-        .video-info .title {
-            flex: 1;
-            font-weight: 500;
-        }
-
+        /* Progress Bar */
         .progress-container {
             display: none;
-            margin-top: 16px;
+            margin-bottom: 16px;
         }
 
-        .progress-container.active {
-            display: block;
-        }
+        .progress-container.active { display: block; }
 
         .progress-bar {
             height: 8px;
@@ -206,210 +267,107 @@
 
         .progress-fill {
             height: 100%;
-            background: var(--accent);
+            background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+            border-radius: 4px;
             width: 0%;
             transition: width 0.3s;
         }
 
-        .progress-text {
+        .progress-stats {
             display: flex;
             justify-content: space-between;
-            font-size: 12px;
+            font-size: 13px;
             color: var(--text-secondary);
         }
 
-        .status {
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 16px;
-            display: none;
-        }
-
-        .status.success {
-            display: block;
-            background: rgba(0, 200, 83, 0.1);
-            color: var(--success);
-            border: 1px solid var(--success);
-        }
-
-        .status.error {
-            display: block;
-            background: rgba(207, 102, 121, 0.1);
-            color: var(--error);
-            border: 1px solid var(--error);
-        }
-
-        .files-list {
-            list-style: none;
-        }
-
-        .file-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            margin-bottom: 8px;
-        }
-
-        .file-info {
-            flex: 1;
-            overflow: hidden;
-        }
-
-        .file-name {
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .file-meta {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .file-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .file-actions button {
-            padding: 8px 12px;
-            font-size: 12px;
-        }
-
-        .btn-danger {
-            background: var(--error);
-        }
-
-        .empty-state {
+        /* Footer */
+        .footer {
             text-align: center;
-            padding: 40px;
             color: var(--text-secondary);
+            font-size: 13px;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
         }
-
-        .platform-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
-            margin-left: 8px;
-        }
-
-        .platform-youtube { background: #ff0000; color: white; }
-        .platform-instagram { background: #e1306c; color: white; }
-        .platform-tiktok { background: #000000; color: white; }
-        .platform-twitter { background: #1da1f2; color: white; }
-
-        .loading {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid transparent;
-            border-top-color: currentColor;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-right: 8px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .hidden { display: none !important; }
     </style>
 </head>
-<body data-theme="dark">
+<body>
     <div class="container">
-        <header>
-            <h1>Zingy</h1>
-            <div class="theme-toggle">
-                <button class="theme-btn" data-theme="light">Light</button>
-                <button class="theme-btn active" data-theme="dark">Dark</button>
-                <button class="theme-btn" data-theme="auto">Auto</button>
-            </div>
-        </header>
-
-        <div class="card">
-            <h2>Download Video</h2>
-            <div class="input-group">
-                <input type="text" id="url-input" placeholder="Paste video URL (YouTube, Instagram, TikTok, Twitter)">
-                <button id="fetch-btn" onclick="fetchFormats()">Fetch</button>
-            </div>
-
-            <div id="video-info" class="hidden">
-                <div class="video-info">
-                    <img id="video-thumbnail" src="" alt="Thumbnail">
-                    <div class="title" id="video-title"></div>
-                    <span id="platform-badge" class="platform-badge"></span>
-                </div>
-
-                <select id="format-select">
-                    <option value="best">Best Quality (Auto)</option>
-                </select>
-
-                <button id="download-btn" onclick="startDownload()">Download</button>
-            </div>
-
-            <div id="progress-container" class="progress-container">
-                <div class="progress-bar">
-                    <div id="progress-fill" class="progress-fill"></div>
-                </div>
-                <div class="progress-text">
-                    <span id="progress-percent">0%</span>
-                    <span id="progress-speed"></span>
-                </div>
-            </div>
-
-            <div id="status" class="status"></div>
+        <div class="theme-toggle">
+            <button data-theme="dark" class="active">Dark</button>
+            <button data-theme="light">Light</button>
+            <button data-theme="auto">Auto</button>
         </div>
 
-        <div class="card">
-            <h2>Downloaded Files</h2>
-            <ul id="files-list" class="files-list">
-                <li class="empty-state">No downloaded files yet</li>
-            </ul>
-            <button class="btn-secondary" onclick="loadFiles()" style="margin-top: 12px;">Refresh</button>
+        <div class="header">
+            <div class="logo">Zingy</div>
+            <div class="subtitle">Download videos from YouTube, Instagram & more</div>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="url-input" placeholder="Paste video URL here...">
+            <button id="fetch-btn" onclick="fetchFormats()">Fetch</button>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <div id="video-info" class="video-info hidden">
+            <img id="video-thumbnail" class="video-thumbnail hidden" src="" alt="Thumbnail">
+            <div class="video-details">
+                <div id="video-title" class="video-title"></div>
+                <span id="platform-badge" class="platform-badge"></span>
+                <br><br>
+                <select id="format-select" class="format-select"></select>
+                <button id="download-btn" onclick="startDownload()">Download</button>
+            </div>
+        </div>
+
+        <div id="progress-container" class="progress-container">
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <div class="progress-stats">
+                <span id="progress-percent">0%</span>
+                <span id="progress-speed"></span>
+            </div>
+        </div>
+
+        <div class="footer">
+            Video downloads are streamed directly to your browser. Nothing is stored on the server.
         </div>
     </div>
 
     <script>
         // Theme handling
-        const themeButtons = document.querySelectorAll('.theme-btn');
-        let currentTheme = localStorage.getItem('theme') || 'dark';
+        let currentTheme = localStorage.getItem('zingy-theme') || 'dark';
 
         function applyTheme(theme) {
             currentTheme = theme;
-            localStorage.setItem('theme', theme);
+            localStorage.setItem('zingy-theme', theme);
 
-            let effectiveTheme = theme;
             if (theme === 'auto') {
-                effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', theme);
             }
 
-            document.body.setAttribute('data-theme', effectiveTheme);
-
-            themeButtons.forEach(btn => {
+            document.querySelectorAll('.theme-toggle button').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.theme === theme);
             });
         }
 
-        themeButtons.forEach(btn => {
+        document.querySelectorAll('.theme-toggle button').forEach(btn => {
             btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
         });
 
-        // Apply saved theme on load
         applyTheme(currentTheme);
 
-        // Listen for system theme changes
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
             if (currentTheme === 'auto') applyTheme('auto');
         });
 
-        // Video fetching
+        // Download flow
         let currentDownloadId = null;
         let pollInterval = null;
 
@@ -425,7 +383,7 @@
             fetchBtn.innerHTML = '<span class="loading"></span>Fetching...';
 
             try {
-                const response = await fetch(`/api/formats`, {
+                const response = await fetch('/api/formats', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url })
@@ -436,7 +394,6 @@
                 if (data.success) {
                     document.getElementById('video-info').classList.remove('hidden');
 
-                    // Set thumbnail
                     const thumbnail = document.getElementById('video-thumbnail');
                     if (data.thumbnail) {
                         thumbnail.src = data.thumbnail;
@@ -445,18 +402,14 @@
                         thumbnail.classList.add('hidden');
                     }
 
-                    // Set title
                     document.getElementById('video-title').textContent = data.title;
 
-                    // Set platform badge
                     const badge = document.getElementById('platform-badge');
                     badge.textContent = data.platform;
                     badge.className = `platform-badge platform-${data.platform}`;
 
-                    // Populate formats
                     const select = document.getElementById('format-select');
                     select.innerHTML = '';
-
                     data.formats.forEach(format => {
                         const option = document.createElement('option');
                         option.value = format.id;
@@ -485,7 +438,7 @@
             downloadBtn.innerHTML = '<span class="loading"></span>Starting...';
 
             try {
-                const response = await fetch(`/api/download`, {
+                const response = await fetch('/api/download', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url, format })
@@ -496,9 +449,7 @@
                 if (data.success) {
                     currentDownloadId = data.download_id;
                     document.getElementById('progress-container').classList.add('active');
-                    showStatus('Download started...', 'success');
-
-                    // Start polling for progress
+                    showStatus('Preparing download...', 'success');
                     pollProgress();
                 } else {
                     showStatus(data.error || 'Failed to start download', 'error');
@@ -525,9 +476,9 @@
                     document.getElementById('progress-speed').textContent = data.speed || '';
 
                     if (data.status === 'completed') {
-                        showStatus(`Downloaded: ${data.filename || data.title}`, 'success');
-                        resetDownloadUI();
-                        loadFiles();
+                        showStatus('Download ready — saving to your device...', 'success');
+                        // Auto-trigger browser download
+                        triggerFileDownload(currentDownloadId);
                         return;
                     } else if (data.status === 'error') {
                         showStatus(data.error || 'Download failed', 'error');
@@ -535,7 +486,6 @@
                         return;
                     }
 
-                    // Continue polling
                     setTimeout(pollProgress, 500);
                 }
             } catch (error) {
@@ -544,64 +494,25 @@
             }
         }
 
+        function triggerFileDownload(downloadId) {
+            // Create a hidden iframe or use window.open to trigger download
+            const a = document.createElement('a');
+            a.href = `/api/file/${downloadId}`;
+            a.download = '';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            resetDownloadUI();
+            showStatus('Download complete!', 'success');
+            setTimeout(hideStatus, 3000);
+        }
+
         function resetDownloadUI() {
             currentDownloadId = null;
             document.getElementById('download-btn').disabled = false;
             document.getElementById('download-btn').textContent = 'Download';
             document.getElementById('progress-container').classList.remove('active');
             document.getElementById('progress-fill').style.width = '0%';
-        }
-
-        async function loadFiles() {
-            try {
-                const response = await fetch(`/api/files`);
-                const data = await response.json();
-
-                const list = document.getElementById('files-list');
-
-                if (data.files && data.files.length > 0) {
-                    list.innerHTML = data.files.map(file => `
-                        <li class="file-item">
-                            <div class="file-info">
-                                <div class="file-name">${escapeHtml(file.name)}</div>
-                                <div class="file-meta">${file.size_formatted}</div>
-                            </div>
-                            <div class="file-actions">
-                                <a href="/downloads/${encodeURIComponent(file.name)}" download>
-                                    <button>Download</button>
-                                </a>
-                                <button class="btn-danger" onclick="deleteFile('${escapeHtml(file.name)}')">Delete</button>
-                            </div>
-                        </li>
-                    `).join('');
-                } else {
-                    list.innerHTML = '<li class="empty-state">No downloaded files yet</li>';
-                }
-            } catch (error) {
-                console.error('Failed to load files:', error);
-            }
-        }
-
-        async function deleteFile(filename) {
-            if (!confirm(`Delete ${filename}?`)) return;
-
-            try {
-                const response = await fetch(`/api/delete`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ filename })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    loadFiles();
-                } else {
-                    alert(data.error || 'Failed to delete file');
-                }
-            } catch (error) {
-                alert('Network error: ' + error.message);
-            }
         }
 
         function showStatus(message, type) {
@@ -614,16 +525,7 @@
             document.getElementById('status').className = 'status';
         }
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Load files on page load
-        loadFiles();
-
-        // Allow Enter key to fetch
+        // Enter key to fetch
         document.getElementById('url-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') fetchFormats();
         });

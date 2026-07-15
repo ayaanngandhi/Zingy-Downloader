@@ -1,31 +1,28 @@
 """
 Zingy Web App - Flask server with yt-dlp backend
 Runs on port 4321
+Streams directly to browser — no files stored on disk.
 """
-
+import io
 import os
 import json
 import uuid
+import tempfile
 import threading
-from datetime import datetime
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, Response, send_file
 from flask_cors import CORS
 import yt_dlp
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend on different port
+CORS(app)
 
-# Configuration
-DOWNLOAD_DIR = os.path.expanduser("~/Downloads/Zingy")
-os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-
-# Track downloads in progress
+# Track downloads in progress (in-memory only)
 downloads = {}
 downloads_lock = threading.Lock()
 
 
 class DownloadProgress:
-    """Track download progress"""
+    """Track download progress — writes to temp file, streams on completion"""
     def __init__(self, download_id):
         self.download_id = download_id
         self.progress = 0
@@ -35,6 +32,8 @@ class DownloadProgress:
         self.speed = ""
         self.eta = ""
         self.title = ""
+        self._tmpfile = None  # tempfile.NamedTemporaryFile
+        self._filepath = None
 
     def hook(self, d):
         status = d.get('status', 'unknown')
@@ -43,14 +42,11 @@ class DownloadProgress:
             self.status = "downloading"
             total = d.get('total_bytes') or d.get('total_bytes_estimate', 0)
             downloaded = d.get('downloaded_bytes', 0)
-
             if total > 0:
                 self.progress = int((downloaded / total) * 100)
-
             speed = d.get('speed', 0)
             if speed:
                 self.speed = f"{speed / 1024 / 1024:.1f} MB/s"
-
             eta = d.get('eta', 0)
             if eta:
                 self.eta = f"{eta}s"
@@ -58,7 +54,6 @@ class DownloadProgress:
         elif status == 'finished':
             self.status = "processing"
             self.progress = 100
-            self.filename = d.get('filename', '')
 
         elif status == 'error':
             self.status = "error"
@@ -78,7 +73,6 @@ class DownloadProgress:
 
 
 def detect_platform(url):
-    """Detect video platform from URL"""
     url_lower = url.lower()
     if 'instagram.com' in url_lower or 'instagr.am' in url_lower:
         return 'instagram'
@@ -93,16 +87,10 @@ def detect_platform(url):
 
 
 def get_available_formats(url):
-    """Get available formats for a video"""
     try:
-        ydl_opts = {
-            'quiet': True,
-            'no_warnings': True,
-        }
-
+        ydl_opts = {'quiet': True, 'no_warnings': True}
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
-
             formats = []
             seen = set()
 
@@ -115,11 +103,9 @@ def get_available_formats(url):
                     vcodec = f.get('vcodec', 'none')
                     acodec = f.get('acodec', 'none')
 
-                    # Skip if no video and no audio
                     if vcodec == 'none' and acodec == 'none':
                         continue
 
-                    # Create display label
                     if vcodec != 'none' and acodec != 'none':
                         label = f"{resolution} ({ext}) - Video+Audio"
                     elif vcodec != 'none':
@@ -127,7 +113,6 @@ def get_available_formats(url):
                     else:
                         label = f"Audio ({ext})"
 
-                    # Deduplicate
                     key = f"{height}_{ext}_{vcodec != 'none'}_{acodec != 'none'}"
                     if key not in seen:
                         seen.add(key)
@@ -140,10 +125,8 @@ def get_available_formats(url):
                             'has_audio': acodec != 'none'
                         })
 
-            # Sort by height (resolution) descending
             formats.sort(key=lambda x: (x['has_video'], x['height']), reverse=True)
 
-            # Add common presets at top
             presets = [
                 {'id': 'best', 'label': 'Best Quality (Auto)', 'ext': 'mp4', 'height': 9999, 'has_video': True, 'has_audio': True},
                 {'id': 'best[ext=mp4]', 'label': 'Best MP4', 'ext': 'mp4', 'height': 9998, 'has_video': True, 'has_audio': True},
@@ -155,18 +138,15 @@ def get_available_formats(url):
                 'title': info.get('title', 'Unknown'),
                 'thumbnail': info.get('thumbnail', ''),
                 'duration': info.get('duration', 0),
-                'formats': presets + formats[:20]  # Limit to 20 formats
+                'formats': presets + formats[:20]
             }
 
     except Exception as e:
-        return {
-            'success': False,
-            'error': str(e)
-        }
+        return {'success': False, 'error': str(e)}
 
 
 def download_video_task(download_id, url, format_id):
-    """Background task to download video"""
+    """Background task — downloads to temp file, NOT permanent storage"""
     progress = downloads.get(download_id)
     if not progress:
         return
@@ -174,11 +154,14 @@ def download_video_task(download_id, url, format_id):
     try:
         platform = detect_platform(url)
 
-        outtmpl = os.path.join(DOWNLOAD_DIR, '%(title).80s.%(ext)s')
+        # Use a temp file that gets auto-cleaned
+        tmp = tempfile.NamedTemporaryFile(suffix='.mp4', delete=False)
+        tmp.close()
+        progress._filepath = tmp.name
 
         ydl_opts = {
             'format': format_id or 'best[ext=mp4]/best',
-            'outtmpl': outtmpl,
+            'outtmpl': tmp.name,
             'progress_hooks': [progress.hook],
             'quiet': True,
             'no_warnings': True,
@@ -189,7 +172,6 @@ def download_video_task(download_id, url, format_id):
             'restrictfilenames': True,
         }
 
-        # Platform-specific options
         if platform == 'youtube':
             format_options = [
                 'best[ext=mp4][acodec!=none][vcodec!=none]',
@@ -208,32 +190,33 @@ def download_video_task(download_id, url, format_id):
             info = ydl.extract_info(url, download=True)
             progress.title = info.get('title', 'Unknown')
             progress.status = "completed"
-            progress.filename = ydl.prepare_filename(info)
+            progress.filename = tmp.name
 
     except Exception as e:
         progress.status = "error"
         progress.error = str(e)
+        # Clean up temp file on error
+        if progress._filepath and os.path.exists(progress._filepath):
+            try:
+                os.unlink(progress._filepath)
+            except Exception:
+                pass
 
 
 @app.route('/')
 def index():
-    """Serve the main page"""
     return render_template('index.html')
 
 
 @app.route('/api/formats', methods=['POST'])
 def api_formats():
-    """Get available formats for a URL"""
     data = request.get_json()
     url = data.get('url', '').strip()
-
     if not url:
         return jsonify({'success': False, 'error': 'URL is required'})
-
     platform = detect_platform(url)
     if platform == 'unknown':
         return jsonify({'success': False, 'error': 'Unsupported platform'})
-
     result = get_available_formats(url)
     result['platform'] = platform
     return jsonify(result)
@@ -241,7 +224,7 @@ def api_formats():
 
 @app.route('/api/download', methods=['POST'])
 def api_download():
-    """Start a download"""
+    """Start a download to temp file. Returns download_id for progress polling."""
     data = request.get_json()
     url = data.get('url', '').strip()
     format_id = data.get('format', 'best')
@@ -259,7 +242,6 @@ def api_download():
     with downloads_lock:
         downloads[download_id] = progress
 
-    # Start download in background thread
     thread = threading.Thread(target=download_video_task, args=(download_id, url, format_id))
     thread.daemon = True
     thread.start()
@@ -277,68 +259,57 @@ def api_progress(download_id):
     progress = downloads.get(download_id)
     if not progress:
         return jsonify({'success': False, 'error': 'Download not found'})
-
-    return jsonify({
-        'success': True,
-        **progress.to_dict()
-    })
+    return jsonify({'success': True, **progress.to_dict()})
 
 
-@app.route('/api/files')
-def api_files():
-    """List downloaded files"""
-    files = []
+@app.route('/api/file/<download_id>')
+def api_file(download_id):
+    """Stream the completed download to client, then delete the temp file."""
+    progress = downloads.get(download_id)
+    if not progress:
+        return jsonify({'success': False, 'error': 'Download not found'}), 404
 
-    if os.path.exists(DOWNLOAD_DIR):
-        for filename in os.listdir(DOWNLOAD_DIR):
-            filepath = os.path.join(DOWNLOAD_DIR, filename)
-            if os.path.isfile(filepath):
-                stat = os.stat(filepath)
-                files.append({
-                    'name': filename,
-                    'size': stat.st_size,
-                    'size_formatted': f"{stat.st_size / 1024 / 1024:.2f} MB",
-                    'modified': datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                })
+    if progress.status != 'completed':
+        return jsonify({'success': False, 'error': 'Download not complete yet'}), 400
 
-    # Sort by modified date, newest first
-    files.sort(key=lambda x: x['modified'], reverse=True)
+    filepath = progress._filepath
+    if not filepath or not os.path.exists(filepath):
+        return jsonify({'success': False, 'error': 'File no longer available'}), 404
 
-    return jsonify({
-        'success': True,
-        'files': files,
-        'download_dir': DOWNLOAD_DIR
-    })
+    # Determine a nice filename for the download
+    safe_title = progress.title or 'video'
+    # Remove chars unsafe for filenames
+    safe_title = "".join(c for c in safe_title if c.isalnum() or c in ' ._-').strip()[:80]
+    download_name = f"{safe_title}.mp4"
 
+    def stream_and_cleanup():
+        """Stream the file then delete it."""
+        with open(filepath, 'rb') as f:
+            while True:
+                chunk = f.read(8192)
+                if not chunk:
+                    break
+                yield chunk
+        # Cleanup after streaming
+        try:
+            os.unlink(filepath)
+        except Exception:
+            pass
+        # Remove from tracking
+        with downloads_lock:
+            downloads.pop(download_id, None)
 
-@app.route('/api/delete', methods=['POST'])
-def api_delete():
-    """Delete a downloaded file"""
-    data = request.get_json()
-    filename = data.get('filename', '')
-
-    if not filename:
-        return jsonify({'success': False, 'error': 'Filename required'})
-
-    # Security: prevent path traversal
-    filename = os.path.basename(filename)
-    filepath = os.path.join(DOWNLOAD_DIR, filename)
-
-    if os.path.exists(filepath):
-        os.remove(filepath)
-        return jsonify({'success': True, 'message': 'File deleted'})
-    else:
-        return jsonify({'success': False, 'error': 'File not found'})
-
-
-@app.route('/downloads/<filename>')
-def serve_download(filename):
-    """Serve downloaded files"""
-    return send_from_directory(DOWNLOAD_DIR, filename, as_attachment=True)
+    return Response(
+        stream_and_cleanup(),
+        mimetype='video/mp4',
+        headers={
+            'Content-Disposition': f'attachment; filename="{download_name}"',
+            'X-Accel-Buffering': 'no',
+        }
+    )
 
 
 if __name__ == '__main__':
-    print(f"Zingy Web App")
-    print(f"Download directory: {DOWNLOAD_DIR}")
-    print(f"Starting server on http://localhost:4321")
+    print("Zingy Web App — streaming mode (no disk storage)")
+    print("Starting server on http://localhost:4321")
     app.run(host='0.0.0.0', port=4321, debug=False, threaded=True)
