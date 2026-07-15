@@ -1,0 +1,29 @@
+[
+  {
+    "timestamp": "2026-07-15T17:28:34.515688Z",
+    "ip_address": "127.0.0.1",
+    "user_agent": "curl/8.5.0",
+    "path": "/api/formats",
+    "referrer": "",
+    "method": "POST",
+    "host": "localhost:4321"
+  },
+  {
+    "timestamp": "2026-07-15T17:28:39.324510Z",
+    "ip_address": "127.0.0.1",
+    "user_agent": "curl/8.5.0",
+    "path": "/api/formats",
+    "referrer": "",
+    "method": "POST",
+    "host": "localhost:4321"
+  },
+  {
+    "timestamp": "2026-07-15T17:28:41.390964Z",
+    "ip_address": "127.0.0.1",
+    "user_agent": "curl/8.5.0",
+    "path": "/api/formats",
+    "referrer": "",
+    "method": "POST",
+    "host": "localhost:4321"
+  }
+]

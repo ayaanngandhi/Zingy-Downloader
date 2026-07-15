@@ -9,16 +9,59 @@ import json
 import uuid
 import tempfile
 import threading
-from flask import Flask, render_template, request, jsonify, Response, send_file
+from datetime import datetime
+from flask import Flask, render_template, request, jsonify, Response, send_file, g
 from flask_cors import CORS
 import yt_dlp
 
 app = Flask(__name__)
 CORS(app)
 
+# Visit tracking
+VISIT_LOG = os.path.join(os.path.dirname(__file__), "visit_logs.json")
+
 # Track downloads in progress (in-memory only)
 downloads = {}
 downloads_lock = threading.Lock()
+
+
+def log_visit():
+    """Log every request to visit_logs.json with real IP."""
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+    if ip and "," in ip:
+        ip = ip.split(",")[0].strip()
+
+    visit = {
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "ip_address": ip or "unknown",
+        "user_agent": request.headers.get("User-Agent", ""),
+        "path": request.path,
+        "referrer": request.headers.get("Referer", ""),
+        "method": request.method,
+        "host": request.headers.get("Host", ""),
+    }
+
+    visits = []
+    if os.path.exists(VISIT_LOG):
+        try:
+            with open(VISIT_LOG, "r") as f:
+                content = f.read().strip()
+                if content:
+                    visits = json.loads(content)
+        except (json.JSONDecodeError, Exception):
+            visits = []
+
+    visits.append(visit)
+    if len(visits) > 10000:
+        visits = visits[-10000:]
+
+    with open(VISIT_LOG, "w") as f:
+        json.dump(visits, f, indent=2, ensure_ascii=False)
+
+
+@app.before_request
+def before_request():
+    log_visit()
 
 
 class DownloadProgress:
@@ -32,7 +75,7 @@ class DownloadProgress:
         self.speed = ""
         self.eta = ""
         self.title = ""
-        self._tmpfile = None  # tempfile.NamedTemporaryFile
+        self._tmpfile = None
         self._filepath = None
 
     def hook(self, d):
@@ -72,6 +115,26 @@ class DownloadProgress:
         }
 
 
+# Supported platforms (displayed on frontend)
+SUPPORTED_PLATFORMS = [
+    {"name": "YouTube", "icon": "▶️", "domain": "youtube.com"},
+    {"name": "Instagram", "icon": "📷", "domain": "instagram.com"},
+    {"name": "TikTok", "icon": "🎵", "domain": "tiktok.com"},
+    {"name": "Twitter/X", "icon": "🐦", "domain": "x.com"},
+    {"name": "Facebook", "icon": "📘", "domain": "facebook.com"},
+    {"name": "Reddit", "icon": "🤖", "domain": "reddit.com"},
+    {"name": "Twitch", "icon": "🎮", "domain": "twitch.tv"},
+    {"name": "Vimeo", "icon": "🎬", "domain": "vimeo.com"},
+    {"name": "SoundCloud", "icon": "🎧", "domain": "soundcloud.com"},
+    {"name": "Spotify", "icon": "🟢", "domain": "spotify.com"},
+    {"name": "Bilibili", "icon": "📺", "domain": "bilibili.com"},
+    {"name": "Dailymotion", "icon": "🎥", "domain": "dailymotion.com"},
+    {"name": "Pinterest", "icon": "📌", "domain": "pinterest.com"},
+    {"name": "Snapchat", "icon": "👻", "domain": "snapchat.com"},
+    {"name": "Threads", "icon": "🧵", "domain": "threads.net"},
+]
+
+
 def detect_platform(url):
     url_lower = url.lower()
     if 'instagram.com' in url_lower or 'instagr.am' in url_lower:
@@ -82,6 +145,28 @@ def detect_platform(url):
         return 'tiktok'
     elif 'twitter.com' in url_lower or 'x.com' in url_lower:
         return 'twitter'
+    elif 'facebook.com' in url_lower or 'fb.com' in url_lower:
+        return 'facebook'
+    elif 'reddit.com' in url_lower:
+        return 'reddit'
+    elif 'twitch.tv' in url_lower:
+        return 'twitch'
+    elif 'vimeo.com' in url_lower:
+        return 'vimeo'
+    elif 'soundcloud.com' in url_lower:
+        return 'soundcloud'
+    elif 'spotify.com' in url_lower:
+        return 'spotify'
+    elif 'bilibili.com' in url_lower:
+        return 'bilibili'
+    elif 'dailymotion.com' in url_lower:
+        return 'dailymotion'
+    elif 'pinterest.com' in url_lower or 'pin.it' in url_lower:
+        return 'pinterest'
+    elif 'snapchat.com' in url_lower:
+        return 'snapchat'
+    elif 'threads.net' in url_lower:
+        return 'threads'
     else:
         return 'unknown'
 
@@ -154,7 +239,6 @@ def download_video_task(download_id, url, format_id):
     try:
         platform = detect_platform(url)
 
-        # Use a temp file that gets auto-cleaned
         tmp = tempfile.NamedTemporaryFile(suffix='.mp4', delete=False)
         tmp.close()
         progress._filepath = tmp.name
@@ -195,7 +279,6 @@ def download_video_task(download_id, url, format_id):
     except Exception as e:
         progress.status = "error"
         progress.error = str(e)
-        # Clean up temp file on error
         if progress._filepath and os.path.exists(progress._filepath):
             try:
                 os.unlink(progress._filepath)
@@ -205,7 +288,7 @@ def download_video_task(download_id, url, format_id):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', platforms=SUPPORTED_PLATFORMS)
 
 
 @app.route('/api/formats', methods=['POST'])
@@ -216,7 +299,7 @@ def api_formats():
         return jsonify({'success': False, 'error': 'URL is required'})
     platform = detect_platform(url)
     if platform == 'unknown':
-        return jsonify({'success': False, 'error': 'Unsupported platform'})
+        return jsonify({'success': False, 'error': 'Unsupported platform. Try a YouTube, Instagram, TikTok, Twitter/X, Facebook, Reddit, Twitch, Vimeo, SoundCloud, or other major platform URL.'})
     result = get_available_formats(url)
     result['platform'] = platform
     return jsonify(result)
@@ -276,26 +359,21 @@ def api_file(download_id):
     if not filepath or not os.path.exists(filepath):
         return jsonify({'success': False, 'error': 'File no longer available'}), 404
 
-    # Determine a nice filename for the download
     safe_title = progress.title or 'video'
-    # Remove chars unsafe for filenames
     safe_title = "".join(c for c in safe_title if c.isalnum() or c in ' ._-').strip()[:80]
     download_name = f"{safe_title}.mp4"
 
     def stream_and_cleanup():
-        """Stream the file then delete it."""
         with open(filepath, 'rb') as f:
             while True:
                 chunk = f.read(8192)
                 if not chunk:
                     break
                 yield chunk
-        # Cleanup after streaming
         try:
             os.unlink(filepath)
         except Exception:
             pass
-        # Remove from tracking
         with downloads_lock:
             downloads.pop(download_id, None)
 
@@ -309,7 +387,21 @@ def api_file(download_id):
     )
 
 
+@app.route('/api/stats')
+def api_stats():
+    """Return visit stats."""
+    visits = []
+    if os.path.exists(VISIT_LOG):
+        try:
+            with open(VISIT_LOG, "r") as f:
+                visits = json.load(f)
+        except Exception:
+            pass
+    return jsonify({'total_visits': len(visits), 'recent': visits[-20:]})
+
+
 if __name__ == '__main__':
     print("Zingy Web App — streaming mode (no disk storage)")
+    print(f"Visit logs → {VISIT_LOG}")
     print("Starting server on http://localhost:4321")
     app.run(host='0.0.0.0', port=4321, debug=False, threaded=True)
