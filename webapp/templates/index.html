@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zingy</title>
+    <title>Zingy — Video Downloader</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <meta name="description" content="Download videos from YouTube, Instagram, TikTok, Twitter/X and 1000+ platforms. Free, no ads, no storage — paste a link, pick quality, download instantly.">
     <style>
         :root {
             --bg-primary: #121212;
@@ -32,17 +33,15 @@
             --border: #cccccc;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
             transition: background 0.3s, color 0.3s;
         }
 
@@ -50,13 +49,10 @@
             max-width: 750px;
             margin: 0 auto;
             padding: 40px 20px;
+            flex: 1;
         }
 
-        /* Header */
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
+        .header { text-align: center; margin-bottom: 32px; }
 
         .logo {
             font-size: 48px;
@@ -65,13 +61,10 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
-        .subtitle {
-            color: var(--text-secondary);
-            font-size: 16px;
-        }
+        .subtitle { color: var(--text-secondary); font-size: 16px; }
 
         .theme-toggle {
             position: absolute;
@@ -85,209 +78,157 @@
         }
 
         .theme-toggle button {
-            background: none;
-            border: none;
+            background: none; border: none;
             color: var(--text-secondary);
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
+            padding: 6px 12px; border-radius: 6px;
+            cursor: pointer; font-size: 14px;
             transition: all 0.2s;
         }
+        .theme-toggle button.active { background: var(--bg-secondary); color: var(--text-primary); }
 
-        .theme-toggle button.active {
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-        }
-
-        /* URL Input */
         .input-group {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 24px;
+            display: flex; gap: 12px; margin-bottom: 24px;
         }
 
         .input-group input {
-            flex: 1;
-            padding: 14px 18px;
+            flex: 1; padding: 14px 18px;
             border: 2px solid var(--border);
             border-radius: 12px;
             background: var(--bg-secondary);
             color: var(--text-primary);
-            font-size: 16px;
-            outline: none;
+            font-size: 16px; outline: none;
             transition: border-color 0.2s;
         }
-
-        .input-group input:focus {
-            border-color: var(--accent);
-        }
-
-        .input-group input::placeholder {
-            color: var(--text-secondary);
-        }
+        .input-group input:focus { border-color: var(--accent); }
+        .input-group input::placeholder { color: var(--text-secondary); }
 
         button {
-            padding: 14px 24px;
-            border: none;
+            padding: 14px 24px; border: none;
             border-radius: 12px;
             background: var(--accent);
-            color: white;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
+            color: white; font-size: 16px;
+            font-weight: 600; cursor: pointer;
             transition: background 0.2s, opacity 0.2s;
         }
+        button:hover { background: var(--accent-hover); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        button:hover {
-            background: var(--accent-hover);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Loading spinner */
         .loading {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
+            display: inline-block; width: 16px; height: 16px;
             border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
+            border-top-color: white; border-radius: 50%;
             animation: spin 0.6s linear infinite;
-            margin-right: 8px;
-            vertical-align: middle;
+            margin-right: 8px; vertical-align: middle;
         }
-
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Status */
         .status {
-            text-align: center;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            font-size: 14px;
-            display: none;
+            text-align: center; padding: 10px; border-radius: 8px;
+            margin-bottom: 16px; font-size: 14px; display: none;
         }
+        .status.error { display: block; background: rgba(207, 102, 121, 0.15); color: var(--error); }
+        .status.success { display: block; background: rgba(0, 200, 83, 0.15); color: var(--success); }
 
-        .status.error {
-            display: block;
-            background: rgba(207, 102, 121, 0.15);
-            color: var(--error);
-        }
-
-        .status.success {
-            display: block;
-            background: rgba(0, 200, 83, 0.15);
-            color: var(--success);
-        }
-
-        /* Video Info */
         .video-info {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 16px;
-            display: flex;
-            gap: 16px;
-            align-items: flex-start;
+            background: var(--bg-secondary); border-radius: 12px;
+            padding: 20px; margin-bottom: 16px;
+            display: flex; gap: 16px; align-items: flex-start;
             border: 1px solid var(--border);
         }
-
         .video-info.hidden { display: none; }
-
-        .video-thumbnail {
-            width: 160px;
-            border-radius: 8px;
-            flex-shrink: 0;
-        }
-
+        .video-thumbnail { width: 160px; border-radius: 8px; flex-shrink: 0; }
         .video-thumbnail.hidden { display: none; }
-
-        .video-details {
-            flex: 1;
-        }
-
-        .video-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            word-break: break-word;
-        }
+        .video-details { flex: 1; }
+        .video-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; word-break: break-word; }
 
         .platform-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: capitalize;
+            display: inline-block; padding: 4px 10px; border-radius: 6px;
+            font-size: 12px; font-weight: 600; text-transform: capitalize;
         }
-
         .platform-youtube { background: rgba(255,0,0,0.15); color: #ff4444; }
         .platform-instagram { background: rgba(225,48,108,0.15); color: #e1306c; }
         .platform-tiktok { background: rgba(0,0,0,0.3); color: #fff; }
         .platform-twitter { background: rgba(29,161,242,0.15); color: #1da1f2; }
+        .platform-facebook { background: rgba(8,102,255,0.15); color: #0866ff; }
+        .platform-reddit { background: rgba(255,69,0,0.15); color: #ff4500; }
+        .platform-twitch { background: rgba(145,70,255,0.15); color: #9146ff; }
+        .platform-vimeo { background: rgba(26,183,234,0.15); color: #1ab7ea; }
+        .platform-soundcloud { background: rgba(255,85,0,0.15); color: #ff5500; }
+        .platform-spotify { background: rgba(30,215,96,0.15); color: #1ed760; }
+        .platform-bilibili { background: rgba(0,174,236,0.15); color: #00aeec; }
+        .platform-dailymotion { background: rgba(0,210,255,0.15); color: #00d2ff; }
+        .platform-pinterest { background: rgba(230,0,35,0.15); color: #e60023; }
+        .platform-snapchat { background: rgba(255,252,0,0.2); color: #fffc00; }
+        .platform-threads { background: rgba(0,0,0,0.3); color: #fff; }
+        .platform-unknown { background: rgba(255,255,255,0.1); color: var(--text-secondary); }
 
-        /* Format Select */
         .format-select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid var(--border);
-            border-radius: 10px;
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            font-size: 14px;
-            margin-bottom: 12px;
-            outline: none;
+            width: 100%; padding: 12px;
+            border: 2px solid var(--border); border-radius: 10px;
+            background: var(--bg-tertiary); color: var(--text-primary);
+            font-size: 14px; margin-bottom: 12px; outline: none;
         }
+        .format-select:focus { border-color: var(--accent); }
 
-        .format-select:focus {
-            border-color: var(--accent);
-        }
-
-        /* Progress Bar */
-        .progress-container {
-            display: none;
-            margin-bottom: 16px;
-        }
-
+        .progress-container { display: none; margin-bottom: 16px; }
         .progress-container.active { display: block; }
+        .progress-bar { height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-hover)); border-radius: 4px; width: 0%; transition: width 0.3s; }
+        .progress-stats { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-secondary); }
 
-        .progress-bar {
-            height: 8px;
-            background: var(--bg-tertiary);
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 8px;
+        /* Platforms grid */
+        .platforms-section {
+            margin-top: 40px;
+            text-align: center;
         }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent), var(--accent-hover));
-            border-radius: 4px;
-            width: 0%;
-            transition: width 0.3s;
+        .platforms-section h3 {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            font-weight: 500;
         }
-
-        .progress-stats {
+        .platforms-grid {
             display: flex;
-            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+        .platform-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
             font-size: 13px;
             color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .platform-chip:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
         }
 
         /* Footer */
         .footer {
             text-align: center;
+            padding: 24px 20px;
+            border-top: 1px solid var(--border);
             color: var(--text-secondary);
             font-size: 13px;
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
+        }
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .footer a:hover { color: var(--accent-hover); }
+        .footer .links {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-bottom: 8px;
         }
     </style>
 </head>
@@ -301,7 +242,7 @@
 
         <div class="header">
             <div class="logo">Zingy</div>
-            <div class="subtitle">Download videos from YouTube, Instagram & more</div>
+            <div class="subtitle">Download videos from YouTube, Instagram, TikTok, Twitter/X & 1000+ more</div>
         </div>
 
         <div class="input-group">
@@ -332,26 +273,45 @@
             </div>
         </div>
 
-        <div class="footer">
-            Video downloads are streamed directly to your browser. Nothing is stored on the server.
+        <!-- Supported Platforms -->
+        <div class="platforms-section">
+            <h3>Supports 1000+ platforms including</h3>
+            <div class="platforms-grid" id="platforms-grid">
+                <!-- Filled by JS -->
+            </div>
         </div>
     </div>
 
+    <footer class="footer">
+        <div class="links">
+            <a href="https://github.com/ayaanngandhi/Zingy-Downloader" target="_blank" rel="noopener">GitHub</a>
+            <span>·</span>
+            <a href="https://ayaanngandhi.in" target="_blank" rel="noopener">ayaanngandhi.in</a>
+        </div>
+        <div>Video downloads are streamed directly to your browser. Nothing is stored on the server.</div>
+    </footer>
+
     <script>
+        // Platform data from server
+        const PLATFORMS = {{ platforms | tojson | safe }};
+
+        // Render platform chips
+        document.getElementById('platforms-grid').innerHTML = PLATFORMS.map(p =>
+            `<span class="platform-chip">${p.icon} ${p.name}</span>`
+        ).join('');
+
         // Theme handling
         let currentTheme = localStorage.getItem('zingy-theme') || 'dark';
 
         function applyTheme(theme) {
             currentTheme = theme;
             localStorage.setItem('zingy-theme', theme);
-
             if (theme === 'auto') {
                 const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                 document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
             } else {
                 document.documentElement.setAttribute('data-theme', theme);
             }
-
             document.querySelectorAll('.theme-toggle button').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.theme === theme);
             });
@@ -360,23 +320,17 @@
         document.querySelectorAll('.theme-toggle button').forEach(btn => {
             btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
         });
-
         applyTheme(currentTheme);
-
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
             if (currentTheme === 'auto') applyTheme('auto');
         });
 
         // Download flow
         let currentDownloadId = null;
-        let pollInterval = null;
 
         async function fetchFormats() {
             const url = document.getElementById('url-input').value.trim();
-            if (!url) {
-                showStatus('Please enter a URL', 'error');
-                return;
-            }
+            if (!url) { showStatus('Please enter a URL', 'error'); return; }
 
             const fetchBtn = document.getElementById('fetch-btn');
             fetchBtn.disabled = true;
@@ -388,25 +342,21 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url })
                 });
-
                 const data = await response.json();
 
                 if (data.success) {
                     document.getElementById('video-info').classList.remove('hidden');
-
                     const thumbnail = document.getElementById('video-thumbnail');
                     if (data.thumbnail) {
                         thumbnail.src = data.thumbnail;
                         thumbnail.classList.remove('hidden');
-                    } else {
-                        thumbnail.classList.add('hidden');
-                    }
+                    } else { thumbnail.classList.add('hidden'); }
 
                     document.getElementById('video-title').textContent = data.title;
 
                     const badge = document.getElementById('platform-badge');
                     badge.textContent = data.platform;
-                    badge.className = `platform-badge platform-${data.platform}`;
+                    badge.className = 'platform-badge platform-' + data.platform;
 
                     const select = document.getElementById('format-select');
                     select.innerHTML = '';
@@ -416,7 +366,6 @@
                         option.textContent = format.label;
                         select.appendChild(option);
                     });
-
                     hideStatus();
                 } else {
                     showStatus(data.error || 'Failed to fetch video info', 'error');
@@ -432,7 +381,6 @@
         async function startDownload() {
             const url = document.getElementById('url-input').value.trim();
             const format = document.getElementById('format-select').value;
-
             const downloadBtn = document.getElementById('download-btn');
             downloadBtn.disabled = true;
             downloadBtn.innerHTML = '<span class="loading"></span>Starting...';
@@ -443,7 +391,6 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url, format })
                 });
-
                 const data = await response.json();
 
                 if (data.success) {
@@ -465,9 +412,8 @@
 
         async function pollProgress() {
             if (!currentDownloadId) return;
-
             try {
-                const response = await fetch(`/api/progress/${currentDownloadId}`);
+                const response = await fetch('/api/progress/' + currentDownloadId);
                 const data = await response.json();
 
                 if (data.success) {
@@ -477,7 +423,6 @@
 
                     if (data.status === 'completed') {
                         showStatus('Download ready — saving to your device...', 'success');
-                        // Auto-trigger browser download
                         triggerFileDownload(currentDownloadId);
                         return;
                     } else if (data.status === 'error') {
@@ -485,19 +430,16 @@
                         resetDownloadUI();
                         return;
                     }
-
                     setTimeout(pollProgress, 500);
                 }
             } catch (error) {
-                console.error('Poll error:', error);
                 setTimeout(pollProgress, 1000);
             }
         }
 
         function triggerFileDownload(downloadId) {
-            // Create a hidden iframe or use window.open to trigger download
             const a = document.createElement('a');
-            a.href = `/api/file/${downloadId}`;
+            a.href = '/api/file/' + downloadId;
             a.download = '';
             document.body.appendChild(a);
             a.click();
@@ -518,14 +460,10 @@
         function showStatus(message, type) {
             const status = document.getElementById('status');
             status.textContent = message;
-            status.className = `status ${type}`;
+            status.className = 'status ' + type;
         }
+        function hideStatus() { document.getElementById('status').className = 'status'; }
 
-        function hideStatus() {
-            document.getElementById('status').className = 'status';
-        }
-
-        // Enter key to fetch
         document.getElementById('url-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') fetchFormats();
         });
