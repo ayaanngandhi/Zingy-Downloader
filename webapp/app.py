@@ -288,7 +288,7 @@ def download_video_task(download_id, url, format_id):
 
 @app.route('/')
 def index():
-    return render_template('index.html', platforms=SUPPORTED_PLATFORMS)
+    return render_template('index.html')
 
 
 @app.route('/api/formats', methods=['POST'])
