@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy - Zingy</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/zingy.css">
+</head>
+<body>
+    <header class="masthead">
+        <div class="brand">
+            <span class="reel" aria-hidden="true">
+                <svg viewBox="0 0 32 32" fill="none">
+                    <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="2.5"/>
+                    <circle cx="16" cy="16" r="3" fill="currentColor"/>
+                    <circle cx="16" cy="7.5" r="2.4" fill="currentColor"/>
+                    <circle cx="24.5" cy="16" r="2.4" fill="currentColor"/>
+                    <circle cx="16" cy="24.5" r="2.4" fill="currentColor"/>
+                    <circle cx="7.5" cy="16" r="2.4" fill="currentColor"/>
+                </svg>
+            </span>
+            <span class="brand__text">
+                <span class="wordmark">Zingy</span>
+                <span class="tagline">film-transfer bench</span>
+            </span>
+        </div>
+    </header>
+
+    <main class="bench">
+        <article class="prose">
+            <div class="section-head"><h2>Privacy</h2><span class="ref">plain language</span></div>
+            <p>Zingy does one job: it moves a video from another site to your device. This page says
+                exactly what the server keeps and what it does not.</p>
+
+            <h3>What is not stored</h3>
+            <p>The video you download is streamed to your browser and is not kept. It sits in a
+                temporary folder only while the transfer runs, and it is deleted once your browser
+                has collected it. If a download is never collected, it is deleted automatically
+                after fifteen minutes.</p>
+
+            <h3>No accounts, no tracking cookies</h3>
+            <p>There are no accounts and no analytics. The only thing the site stores in your
+                browser is your theme choice, under the key <span class="mono">zingy-theme</span>.
+                It stays in your browser and is never sent to the server.</p>
+
+            <h3>The visit log</h3>
+            <p>For each request, the server writes a line to a file called
+                <span class="mono">visit_logs.json</span>. That line contains the time, your IP
+                address, your browser's user-agent string, the path requested, the referring page,
+                the HTTP method, and the host name. The log is capped at the most recent ten
+                thousand entries. It is used only to understand traffic and keep the service
+                running. It is not sold and not shared.</p>
+
+            <h3>Third parties</h3>
+            <p>To read a video, the server contacts the site you asked it to. That site may log the
+                request just as it would for any visitor. Zingy itself sends nothing to advertising
+                or analytics services.</p>
+
+            <h3>Contact</h3>
+            <p>Questions about this page can go to the project repository linked below.</p>
+        </article>
+    </main>
+
+    <footer class="footer">
+        <div class="footer__links">
+            <a href="/">Home</a>
+            <a href="/terms">Terms</a>
+            <a href="https://github.com/ayaanngandhi/Zingy-Downloader" target="_blank" rel="noopener">Repository</a>
+            <a href="https://ayaanngandhi.in" target="_blank" rel="noopener">ayaanngandhi.in</a>
+        </div>
+        <p class="footer__note">Video downloads stream directly to this browser. Nothing is stored on
+            the server once the transfer is collected.</p>
+    </footer>
+
+    <script src="/static/zingy.js" defer></script>
+</body>
+</html>

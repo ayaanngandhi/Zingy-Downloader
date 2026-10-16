@@ -6,7 +6,9 @@ Streams directly to browser — no files stored on disk.
 import io
 import os
 import json
+import time
 import uuid
+import shutil
 import tempfile
 import threading
 from datetime import datetime
@@ -23,6 +25,11 @@ VISIT_LOG = os.path.join(os.path.dirname(__file__), "visit_logs.json")
 # Track downloads in progress (in-memory only)
 downloads = {}
 downloads_lock = threading.Lock()
+
+# Abandoned-download cleanup. A download whose file is never collected by a
+# client is deleted after this many seconds so temp files cannot fill the disk.
+DOWNLOAD_TTL_SECONDS = 900
+TEMP_PREFIX = "zingy_dl_"
 
 
 def log_visit():
@@ -75,8 +82,10 @@ class DownloadProgress:
         self.speed = ""
         self.eta = ""
         self.title = ""
+        self.created_at = time.time()
         self._tmpfile = None
         self._filepath = None
+        self._workdir = None
 
     def hook(self, d):
         status = d.get('status', 'unknown')
@@ -231,21 +240,26 @@ def get_available_formats(url):
 
 
 def download_video_task(download_id, url, format_id):
-    """Background task — downloads to temp file, NOT permanent storage"""
+    """Background task - downloads to a unique temp directory, NOT permanent storage.
+
+    yt-dlp refuses to download when the destination path already exists ("has
+    already been downloaded"). We therefore give it an empty directory and let
+    yt-dlp choose the filename inside it, then pick up whatever it produced.
+    """
     progress = downloads.get(download_id)
     if not progress:
         return
 
+    workdir = None
     try:
         platform = detect_platform(url)
 
-        tmp = tempfile.NamedTemporaryFile(suffix='.mp4', delete=False)
-        tmp.close()
-        progress._filepath = tmp.name
+        workdir = tempfile.mkdtemp(prefix=TEMP_PREFIX)
+        progress._workdir = workdir
 
         ydl_opts = {
             'format': format_id or 'best[ext=mp4]/best',
-            'outtmpl': tmp.name,
+            'outtmpl': os.path.join(workdir, '%(title).80s.%(ext)s'),
             'progress_hooks': [progress.hook],
             'quiet': True,
             'no_warnings': True,
@@ -271,24 +285,117 @@ def download_video_task(download_id, url, format_id):
             ydl_opts['extractor_args'] = {'instagram': {'skip': ['dash']}}
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
+            info = ydl.extract_info(url, download=True) or {}
             progress.title = info.get('title', 'Unknown')
+
+            filepath = _downloaded_filepath(info, workdir)
+            if not filepath:
+                raise RuntimeError("Download finished but no output file was produced")
+
+            progress._filepath = filepath
+            progress.filename = filepath
             progress.status = "completed"
-            progress.filename = tmp.name
 
     except Exception as e:
         progress.status = "error"
         progress.error = str(e)
-        if progress._filepath and os.path.exists(progress._filepath):
-            try:
-                os.unlink(progress._filepath)
-            except Exception:
-                pass
+        _remove_workdir(progress)
+
+
+def _downloaded_filepath(info, workdir):
+    """Resolve the real file yt-dlp wrote inside workdir (handles merges)."""
+    candidates = []
+    for entry in info.get('requested_downloads') or []:
+        fp = entry.get('filepath')
+        if fp:
+            candidates.append(fp)
+    if info.get('filepath'):
+        candidates.append(info['filepath'])
+    try:
+        candidates.extend(
+            os.path.join(workdir, name)
+            for name in os.listdir(workdir)
+            if os.path.isfile(os.path.join(workdir, name))
+        )
+    except OSError:
+        pass
+
+    existing = [p for p in candidates if p and os.path.exists(p)]
+    if not existing:
+        return None
+    best = max(existing, key=os.path.getsize)
+    return best if os.path.getsize(best) > 0 else None
+
+
+def _remove_workdir(progress):
+    """Delete the download directory and everything in it."""
+    workdir = getattr(progress, '_workdir', None)
+    if workdir and os.path.isdir(workdir):
+        shutil.rmtree(workdir, ignore_errors=True)
+    progress._workdir = None
+    progress._filepath = None
+
+
+def _sweep_downloads(now=None):
+    """Drop finished/errored downloads that no client collected within the TTL."""
+    now = now if now is not None else time.time()
+    with downloads_lock:
+        expired = [
+            did for did, p in downloads.items()
+            if p.status in ('completed', 'error', 'starting')
+            and now - p.created_at > DOWNLOAD_TTL_SECONDS
+        ]
+        victims = [downloads.pop(did) for did in expired]
+    for p in victims:
+        _remove_workdir(p)
+
+
+def _sweep_orphan_dirs():
+    """Remove leftover download directories from a previous process run."""
+    tmp = tempfile.gettempdir()
+    cutoff = time.time() - DOWNLOAD_TTL_SECONDS
+    try:
+        names = os.listdir(tmp)
+    except OSError:
+        return
+    for name in names:
+        path = os.path.join(tmp, name)
+        if not name.startswith(TEMP_PREFIX) or not os.path.isdir(path):
+            continue
+        try:
+            if os.path.getmtime(path) < cutoff:
+                shutil.rmtree(path, ignore_errors=True)
+        except OSError:
+            pass
+
+
+def _download_sweeper():
+    _sweep_orphan_dirs()
+    while True:
+        time.sleep(60)
+        try:
+            _sweep_downloads()
+            _sweep_orphan_dirs()
+        except Exception:
+            pass
+
+
+threading.Thread(target=_download_sweeper, daemon=True).start()
 
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
+
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
 
 
 @app.route('/api/formats', methods=['POST'])
@@ -370,10 +477,7 @@ def api_file(download_id):
                 if not chunk:
                     break
                 yield chunk
-        try:
-            os.unlink(filepath)
-        except Exception:
-            pass
+        _remove_workdir(progress)
         with downloads_lock:
             downloads.pop(download_id, None)
 
