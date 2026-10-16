@@ -183,6 +183,8 @@ def detect_platform(url):
 def get_available_formats(url):
     try:
         ydl_opts = {'quiet': True, 'no_warnings': True}
+        if detect_platform(url) == 'youtube':
+            ydl_opts['extractor_args'] = {'youtube': {'player_client': ['android', 'web']}}
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             formats = []

@@ -25,9 +25,12 @@
             </span>
             <span class="brand__text">
                 <span class="wordmark">Zingy</span>
-                <span class="tagline">film-transfer bench</span>
+                <span class="tagline">film transfer bench</span>
             </span>
-            <span class="lamp" aria-hidden="true"></span>
+            <span class="lamp-wrap">
+                <span class="lamp" aria-hidden="true"></span>
+                <span class="lamp__text">live</span>
+            </span>
         </div>
 
         <div class="theme-switch" role="group" aria-label="Colour theme">
@@ -50,8 +53,7 @@
                 <button id="fetch-btn" class="btn btn--amber" type="button">Fetch</button>
             </div>
             <p class="hint">Paste a link from any supported source. Zingy reads the title, runtime and
-                available formats, then transfers the file straight to this browser. The server keeps
-                no copy of what you download.</p>
+                available formats, then transfers the file straight to this browser.</p>
         </section>
 
         <p id="status" class="status" role="status" aria-live="polite" hidden></p>
@@ -63,7 +65,7 @@
         </section>
 
         <section id="video-info" class="slate" aria-label="Fetched video" hidden>
-            <div class="slate__clap" aria-hidden="true"></div>
+            <div class="slate__clap">Slate · Ready</div>
             <div class="slate__body">
                 <figure id="slate-frame" class="slate__frame is-empty">
                     <img id="video-thumbnail" alt="Source frame" hidden>
@@ -90,7 +92,7 @@
                         <select id="format-select" class="format-select"></select>
                     </label>
                     <div class="field field--controls">
-                        <button id="download-btn" class="btn btn--teal" type="button">Download</button>
+                        <button id="download-btn" class="btn btn--amber" type="button">Download</button>
                     </div>
                 </div>
             </div>
@@ -137,13 +139,14 @@
         <section class="filmstrip-section" aria-labelledby="strip-head">
             <div class="section-head">
                 <h2 id="strip-head">Sources</h2>
-                <span class="ref">15 shown / 1000+</span>
+                <button id="strip-toggle" class="strip-toggle" type="button" aria-pressed="false"
+                        aria-controls="filmstrip-track">Pause</button>
             </div>
             <p class="filmstrip__note">Fifteen of the more than one thousand sites Zingy can read.
-                The strip keeps rolling; hover to hold it still.</p>
+                The strip keeps rolling; Pause holds it still.</p>
             <div class="filmstrip">
                 <div class="sprockets" aria-hidden="true"></div>
-                <div class="filmstrip__viewport">
+                <div class="filmstrip__viewport" tabindex="0" role="group" aria-label="Rolling source strip">
                     <div class="filmstrip__track" id="filmstrip-track"></div>
                 </div>
                 <div class="sprockets" aria-hidden="true"></div>
