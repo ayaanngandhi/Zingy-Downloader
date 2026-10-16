@@ -62,6 +62,17 @@
       '<div class="filmstrip__set" aria-hidden="true">' + one + "</div>";
   }
 
+  function initFilmstrip() {
+    var toggle = $("strip-toggle");
+    var strip = document.querySelector(".filmstrip");
+    if (!toggle || !strip) return;
+    toggle.addEventListener("click", function () {
+      var paused = strip.classList.toggle("is-paused");
+      toggle.setAttribute("aria-pressed", paused ? "true" : "false");
+      toggle.textContent = paused ? "Play" : "Pause";
+    });
+  }
+
   /* ------------------------------------------------- academy leader ring */
   var RING_R = 88;
   var RING_C = 2 * Math.PI * RING_R;
@@ -340,6 +351,7 @@
   /* ---------------------------------------------------------------- init */
   function init() {
     buildFilmstrip();
+    initFilmstrip();
     buildLeader();
     initTheme();
 
