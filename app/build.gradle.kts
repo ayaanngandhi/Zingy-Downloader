@@ -57,7 +57,7 @@ android {
 chaquopy {
     defaultConfig {
         buildPython("/usr/bin/python3.12")
-        version = "3.8"
+        version = "3.11"
         pip {
             install("yt-dlp>=2024.12.1")
         }
