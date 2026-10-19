@@ -1,10 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- "Cutting Room" palette, light theme. Mirrors webapp/static/zingy.css. -->
+    <color name="zingy_ground">#FFDFE1E0</color>
+    <color name="zingy_panel">#FFECEEED</color>
+    <color name="zingy_panel_2">#FFF6F7F6</color>
+    <color name="zingy_ink">#FF1B2124</color>
+    <color name="zingy_ink_dim">#FF4A5459</color>
+    <color name="zingy_line">#FFB4BAB8</color>
+    <color name="zingy_line_strong">#FF8B9492</color>
+    <color name="zingy_amber">#FFE5A22C</color>
+    <color name="zingy_amber_text">#FF7A5208</color>
+    <color name="zingy_teal_text">#FF1F6A6E</color>
+    <color name="zingy_teal_fill">#FF3E8F94</color>
+    <color name="zingy_error_text">#FF9E3B34</color>
+    <color name="zingy_error_fill">#FFC4514A</color>
+    <color name="zingy_film">#FF1A1F23</color>
+    <color name="zingy_film_line">#FF38424A</color>
+    <color name="zingy_film_ink">#FFECE8E1</color>
+    <color name="zingy_film_dim">#FFA7B1B6</color>
+    <color name="zingy_field_ink">#FF1B2124</color>
 </resources>

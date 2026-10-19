@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- "Cutting Room" palette, dark theme. Mirrors webapp/static/zingy.css. -->
+    <color name="zingy_ground">#FF20262B</color>
+    <color name="zingy_panel">#FF2A3137</color>
+    <color name="zingy_panel_2">#FF333C43</color>
+    <color name="zingy_ink">#FFECE8E1</color>
+    <color name="zingy_ink_dim">#FFA7B1B6</color>
+    <color name="zingy_line">#FF3C464D</color>
+    <color name="zingy_line_strong">#FF55626B</color>
+    <color name="zingy_amber">#FFE5A22C</color>
+    <color name="zingy_amber_text">#FFE5A22C</color>
+    <color name="zingy_teal_text">#FF7FCDD1</color>
+    <color name="zingy_teal_fill">#FF3E8F94</color>
+    <color name="zingy_error_text">#FFE68C82</color>
+    <color name="zingy_error_fill">#FFC4514A</color>
+    <color name="zingy_film">#FF1A1F23</color>
+    <color name="zingy_film_line">#FF38424A</color>
+    <color name="zingy_film_ink">#FFECE8E1</color>
+    <color name="zingy_film_dim">#FFA7B1B6</color>
+    <color name="zingy_field_ink">#FF20262B</color>
+</resources>
