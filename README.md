@@ -36,4 +36,5 @@ APK will be at `app/build/outputs/apk/release/`
 Just run `python webapp/app.py`
 
 ## License
-MIT
+
+MIT - see [LICENSE](LICENSE).
